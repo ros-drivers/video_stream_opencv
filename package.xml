@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package>
+  <name>video_stream_opencv</name>
+  <version>0.0.0</version>
+  <description>The video_stream_opencv package contains a node to publish a cam stream (the protocols that
+    opencv supports are supported, including rtsp, webcams on /dev/video, video files).</description>
+  <maintainer email="sam.pfeiffer@pal-robotics.com">Sammy Pfeiffer</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>opencv</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <run_depend>opencv</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>std_msgs</run_depend>
+
+
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>

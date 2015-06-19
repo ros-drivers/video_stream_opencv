@@ -1,0 +1,11 @@
+<launch>
+        <param name="Vid" type="string" value='rtsp://10.68.0.15:554/cam/realmonitor?channel=1&amp;subtype=0&amp;proto=Onvif?tcp' />
+        <param name="vidTopic" type="string" value="recorded" /> <!--camera for webcam, recorded for recorded video -->
+
+        <node pkg="webcam_pub" type="webcam" name="webcam1" args="0" >
+        </node>
+        <node pkg="webcam_pub" type="video" name="Vid1"> 
+        </node>
+        <node pkg="webcam_pub" type="viewer" name="viewer" >
+        </node>
+</launch>
