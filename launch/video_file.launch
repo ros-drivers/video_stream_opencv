@@ -2,9 +2,9 @@
    <!-- launch video stream -->
    <include file="$(find video_stream_opencv)/launch/camera.launch" >
    		<!-- node name and ros graph name -->
-	  	<arg name="camera_name" value="webcam" />
-	  	<!-- means video device 0, /dev/video0 -->
-	  	<arg name="video_stream_provider" value="0" />
+	  	<arg name="camera_name" value="videofile" />
+	  	<!-- full path to the video file -->
+	  	<arg name="video_stream_provider" value="/home/MYUSER/my_video.mkv" />
 	  	<!-- throttling the querying of frames to -->
 	  	<arg name="fps" value="30" />
 	  	<!-- visualize on an image_view window the stream generated -->

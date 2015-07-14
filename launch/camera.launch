@@ -1,0 +1,23 @@
+<launch>
+  	<arg name="camera_name" default="camera" />
+  	<!-- video_stream_provider can be a number as a video device or a url of a video stream -->
+  	<arg name="video_stream_provider" default="0" />
+  	<!-- frames per second to query the camera for -->
+  	<arg name="fps" default="30" />
+  	<!-- if show a image_view window subscribed to the generated stream -->
+	<arg name="visualize" default="false"/>
+   
+   	<!-- images will be published at /camera_name/image with the image transports plugins (e.g.: compressed) installed -->
+   	<group ns="$(arg camera_name)">
+	    <node pkg="video_stream_opencv" type="video_stream" name="$(arg camera_name)_stream" output="screen"> 
+	    	<remap from="camera" to="image" />
+	        <param name="video_stream_provider" type="string" value="$(arg video_stream_provider)" />
+	        <param name="fps" type="int" value="$(arg fps)" />
+	    </node>
+
+	    <node if="$(arg visualize)" name="$(arg camera_name)_image_view" pkg="image_view" type="image_view">
+	    	<remap from="image" to="image" />
+	    </node>
+	</group>
+
+</launch>

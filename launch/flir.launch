@@ -1,9 +1,0 @@
-<launch>
-        <param name="stream_url" type="string" value='rtsp://10.68.0.15:554/cam/realmonitor?channel=1&amp;subtype=0&amp;proto=Onvif?tcp' />
-        <param name="fps" type="int" value="30" />
-   
-        <node pkg="video_stream_opencv" type="video_stream" name="thermal_camera"> 
-        	<remap from="camera" to="thermal" />
-        </node>
-
-</launch>
