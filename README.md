@@ -1,6 +1,6 @@
 A package to view video streams based on the [OpenCV VideoCapture module](http://docs.opencv.org/modules/highgui/doc/reading_and_writing_images_and_video.html#videocapture), easy way to publish on a ROS Image topic usb cams, ethernet cameras, video streams or video files.
 
-Based on the ROS [tutorial to convert opencv images to ROS messages](http://wiki.ros.org/image_transport/Tutorials/PublishingImages).
+![Screenshot of the plugin working with a webcam, video stream and video file](https://raw.githubusercontent.com/pal-robotics/video_stream_opencv/master/screenshot_usage.png)
 
 Example usages in launch folder:
 
@@ -18,7 +18,9 @@ Example usages in launch folder:
        </include>
     </launch>
 
-![Screenshot of the plugin working with a webcam, video stream and video file](https://raw.githubusercontent.com/pal-robotics/video_stream_opencv/master/screenshot_usage.png)
+Based on the ROS [tutorial to convert opencv images to ROS messages](http://wiki.ros.org/image_transport/Tutorials/PublishingImages).
+
+===
 
 You can use any input that OpenCV on your system accepts, e.g.:
 
@@ -29,6 +31,8 @@ You can use any input that OpenCV on your system accepts, e.g.:
 * Video files, anything you can play, e.g.: myvideo.avi
 
 * Etc.
+
+===
 
 In the scripts folder you'll find `test_video_resource.py` which you can use to test if your system
 installation can use this node to open your video stream (not using any ROS). Just do any of those:
