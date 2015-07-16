@@ -51,9 +51,8 @@ int main(int argc, char** argv)
 
     ros::Rate r(fps);
     while (nh.ok()) {
+        cap >> frame;
         if (pub.getNumSubscribers() > 0){
-            cap >> frame;
-
             // Check if grabbed frame is actually full with some content
             if(!frame.empty()) {
                 msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
