@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>video_stream_opencv</name>
-  <version>0.0.2</version>
+  <version>0.0.1</version>
   <description>The video_stream_opencv package contains a node to publish a video stream (the protocols that
     opencv supports are supported, including rtsp, webcams on /dev/video, video files).</description>
   <maintainer email="sam.pfeiffer@pal-robotics.com">Sammy Pfeiffer</maintainer>
@@ -11,11 +11,13 @@
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>image_transport</build_depend>
+  <build_depend>camera_info_manager</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <run_depend>cv_bridge</run_depend>
   <run_depend>image_transport</run_depend>
+  <run_depend>camera_info_manager</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>sensor_msgs</run_depend>

@@ -4,9 +4,14 @@
    		<!-- node name and ros graph name -->
 	  	<arg name="camera_name" value="videofile" />
 	  	<!-- full path to the video file -->
-	  	<arg name="video_stream_provider" value="/home/MYUSER/my_video.mkv" />
+	  	<arg name="video_stream_provider" value="/home/sampfeiffer/Videos/REEM_grasping.mp4" />
 	  	<!-- throttling the querying of frames to -->
 	  	<arg name="fps" value="30" />
+	  	<!-- setting frame_id -->
+	  	<arg name="frame_id" value="videofile" />
+	  	<!-- camera info loading, take care as it needs the "file:///" at the start , e.g.:
+	  	"file:///$(find your_camera_package)/config/your_camera.yaml" -->
+	  	<arg name="camera_info_url" value="" />
 	  	<!-- visualize on an image_view window the stream generated -->
 	  	<arg name="visualize" value="true" />
    </include>
