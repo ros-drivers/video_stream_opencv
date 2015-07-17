@@ -1,4 +1,4 @@
-A package to view video streams based on the [OpenCV VideoCapture module](http://docs.opencv.org/modules/highgui/doc/reading_and_writing_images_and_video.html#videocapture), easy way to publish on a ROS Image topic usb cams, ethernet cameras, video streams or video files.
+A package to view video streams based on the [OpenCV VideoCapture module](http://docs.opencv.org/modules/highgui/doc/reading_and_writing_images_and_video.html#videocapture), easy way to publish on a ROS Image topic (including camera info) usb cams, ethernet cameras, video streams or video files.
 
 ![Screenshot of the plugin working with a webcam, video stream and video file](https://raw.githubusercontent.com/pal-robotics/video_stream_opencv/master/screenshot_usage.png)
 
@@ -9,14 +9,20 @@ Example usages in launch folder:
        <include file="$(find video_stream_opencv)/launch/camera.launch" >
             <!-- node name and ros graph name -->
             <arg name="camera_name" value="webcam" />
-            <!-- means video device 0, /dev/video0, can be a video stream or a video file or anything OpenCV accepts -->
+            <!-- means video device 0, /dev/video0 -->
             <arg name="video_stream_provider" value="0" />
             <!-- throttling the querying of frames to -->
             <arg name="fps" value="30" />
+            <!-- setting frame_id -->
+            <arg name="frame_id" value="webcam" />
+            <!-- camera info loading, take care as it needs the "file:///" at the start , e.g.:
+            "file:///$(find your_camera_package)/config/your_camera.yaml" -->
+            <arg name="camera_info_url" value="" />
             <!-- visualize on an image_view window the stream generated -->
             <arg name="visualize" value="true" />
        </include>
     </launch>
+
 
 Based on the ROS [tutorial to convert opencv images to ROS messages](http://wiki.ros.org/image_transport/Tutorials/PublishingImages).
 
