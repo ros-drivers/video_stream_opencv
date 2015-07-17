@@ -9,9 +9,8 @@
 	  	<arg name="fps" value="30" />
 	  	<!-- setting frame_id -->
 	  	<arg name="frame_id" value="rtsp" />
-	  	<!-- camera info loading, take care as it needs the "file:///" at the start , e.g.:
-	  	"file:///$(find your_camera_package)/config/your_camera.yaml" -->
-	  	<arg name="camera_info_url" value="" />
+	  	<!-- camera info loading, take care as it needs the "file:///" at the start , e.g.:-->
+	  	<arg name="camera_info_url" value="file:///$(find video_stream_opencv)/config/test_calibration.yaml"/>
 	  	<!-- visualize on an image_view window the stream generated -->
 	  	<arg name="visualize" value="true" />
    </include>
