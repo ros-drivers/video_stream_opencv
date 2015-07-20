@@ -2,6 +2,7 @@
 #include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sstream>
 
@@ -52,6 +53,27 @@ int main(int argc, char** argv)
     _nh.param("camera_info_url", camera_info_url, std::string(""));
     ROS_INFO_STREAM("Provided camera_info_url: '" << camera_info_url << "'");
 
+    bool flip_horizontal;
+    _nh.param("flip_horizontal", flip_horizontal, false);
+    ROS_INFO_STREAM("Flip horizontal image is : " << ((flip_horizontal)?"true":"false"));
+
+    bool flip_vertical;
+    _nh.param("flip_vertical", flip_vertical, false);
+    ROS_INFO_STREAM("Flip flip_vertical image is : " << ((flip_vertical)?"true":"false"));
+
+    // From http://docs.opencv.org/modules/core/doc/operations_on_arrays.html#void flip(InputArray src, OutputArray dst, int flipCode)
+    // FLIP_HORIZONTAL == 1, FLIP_VERTICAL == 0 or FLIP_BOTH == -1
+    bool flip_image = true;
+    int flip_value;
+    if (flip_horizontal && flip_vertical)
+        flip_value = 0; // flip both, horizontal and vertical
+    else if (flip_horizontal)
+        flip_value = 1;
+    else if (flip_vertical)
+        flip_value = -1;
+    else
+        flip_image = false;
+
     if(!cap.isOpened()){
         ROS_ERROR_STREAM("Could not open the stream.");
         return -1;
@@ -84,6 +106,9 @@ int main(int argc, char** argv)
         if (pub.getNumSubscribers() > 0){
             // Check if grabbed frame is actually full with some content
             if(!frame.empty()) {
+                // Flip the image if necessary
+                if (flip_image)
+                    cv::flip(frame, frame, flip_value);
                 msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
                 // Fill width and height if they are not set
                 if (cam_info_msg.height == 0 || cam_info_msg.width == 0){
