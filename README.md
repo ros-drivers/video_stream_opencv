@@ -1,8 +1,8 @@
-A package to view video streams based on the [OpenCV VideoCapture module](http://docs.opencv.org/modules/highgui/doc/reading_and_writing_images_and_video.html#videocapture), easy way to publish on a ROS Image topic (including camera info) usb cams, ethernet cameras, video streams or video files.
+A package to view video streams based on the [OpenCV VideoCapture module](http://docs.opencv.org/modules/highgui/doc/reading_and_writing_images_and_video.html#videocapture), easy way to publish on a ROS Image topic (including camera info) usb cams, ethernet cameras, video streams or video files. It also supports flipping of images.
 
 ![Screenshot of the plugin working with a webcam, video stream and video file](https://raw.githubusercontent.com/pal-robotics/video_stream_opencv/master/screenshot_usage.png)
 
-Example usages in launch folder:
+Example usages in launch folder (only the argument `video_stream_provider` is mandatory):
 
     <launch>
        <!-- launch video stream -->
@@ -18,6 +18,10 @@ Example usages in launch folder:
             <!-- camera info loading, take care as it needs the "file:///" at the start , e.g.:
             "file:///$(find your_camera_package)/config/your_camera.yaml" -->
             <arg name="camera_info_url" value="" />
+            <!-- flip the image horizontally (mirror it) -->
+            <arg name="flip_horizontal" value="false" />
+            <!-- flip the image vertically -->
+            <arg name="flip_vertical" value="false" />
             <!-- visualize on an image_view window the stream generated -->
             <arg name="visualize" value="true" />
        </include>
