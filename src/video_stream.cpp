@@ -5,8 +5,35 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sstream>
+#include <boost/assign/list_of.hpp>
 
 // based on the ros tutorial on transforming opencv images to Image messages
+
+sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr img){
+    sensor_msgs::CameraInfo cam_info_msg;
+    // Add the most common distortion model as sensor_msgs/CameraInfo says
+    cam_info_msg.distortion_model = "plumb_bob";
+    // Don't let D matrix be empty
+    cam_info_msg.D.resize(5, 0.0);
+
+    // Give a reasonable default K
+    cam_info_msg.K = boost::assign::list_of(1.0) (0.0) (img->width/2.0)
+                                           (0.0) (1.0) (img->height/2.0)
+                                           (0.0) (0.0) (1.0);
+    // Give a reasonable default P
+    cam_info_msg.P = boost::assign::list_of (1.0) (0.0) (img->width/2.0) (0.0)
+                                            (0.0) (1.0) (img->height/2.0) (0.0)
+                                            (0.0) (0.0) (1.0) (0.0);
+    // Fill image size
+    cam_info_msg.height = img->height;
+    cam_info_msg.width = img->width;
+
+    cam_info_msg.header.frame_id = img->header.frame_id;
+
+    return cam_info_msg;
+}
+
+
 
 int main(int argc, char** argv)
 {
@@ -85,20 +112,10 @@ int main(int argc, char** argv)
     sensor_msgs::ImagePtr msg;
     sensor_msgs::CameraInfo cam_info_msg;
     std_msgs::Header header;
-
-    camera_info_manager::CameraInfoManager cam_info_manager(nh, camera_name, camera_info_url);
-    // Get the saved camera info if any and setup some values if needed
-    cam_info_msg = cam_info_manager.getCameraInfo();
     header.frame_id = frame_id;
-    cam_info_msg.header = header;
-    // If there is no distorsion model, add the most common one as sensor_msgs/CameraInfo says
-    if (cam_info_msg.distortion_model == ""){
-        cam_info_msg.distortion_model = "plumb_bob";
-        // Don't let D matrix be empty then
-        if (cam_info_msg.D.size() != 5)
-            cam_info_msg.D.resize(5, 0.0);
-    }
-    cam_info_manager.setCameraInfo(cam_info_msg);
+    camera_info_manager::CameraInfoManager cam_info_manager(nh, camera_name, camera_info_url);
+    // Get the saved camera info if any
+    cam_info_msg = cam_info_manager.getCameraInfo();
 
     ros::Rate r(fps);
     while (nh.ok()) {
@@ -110,10 +127,10 @@ int main(int argc, char** argv)
                 if (flip_image)
                     cv::flip(frame, frame, flip_value);
                 msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
-                // Fill width and height if they are not set
-                if (cam_info_msg.height == 0 || cam_info_msg.width == 0){
-                    cam_info_msg.height = msg->height;
-                    cam_info_msg.width = msg->width;
+                // Create a default camera info if we didn't get a stored one on initialization
+                if (cam_info_msg.distortion_model == ""){
+                    cam_info_msg = get_default_camera_info_from_image(msg);
+                    cam_info_manager.setCameraInfo(cam_info_msg);
                 }
                 // The timestamps are in sync thanks to this publisher
                 pub.publish(*msg, cam_info_msg, ros::Time::now());
