@@ -7,29 +7,30 @@
 #include <sstream>
 #include <boost/assign/list_of.hpp>
 
-// based on the ros tutorial on transforming opencv images to Image messages
+// Based on the ros tutorial on transforming opencv images to Image messages
 
 sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr img){
     sensor_msgs::CameraInfo cam_info_msg;
-    // Add the most common distortion model as sensor_msgs/CameraInfo says
-    cam_info_msg.distortion_model = "plumb_bob";
-    // Don't let D matrix be empty
-    cam_info_msg.D.resize(5, 0.0);
-
-    // Give a reasonable default K
-    cam_info_msg.K = boost::assign::list_of(1.0) (0.0) (img->width/2.0)
-                                           (0.0) (1.0) (img->height/2.0)
-                                           (0.0) (0.0) (1.0);
-    // Give a reasonable default P
-    cam_info_msg.P = boost::assign::list_of (1.0) (0.0) (img->width/2.0) (0.0)
-                                            (0.0) (1.0) (img->height/2.0) (0.0)
-                                            (0.0) (0.0) (1.0) (0.0);
+    cam_info_msg.header.frame_id = img->header.frame_id;
     // Fill image size
     cam_info_msg.height = img->height;
     cam_info_msg.width = img->width;
-
-    cam_info_msg.header.frame_id = img->header.frame_id;
-
+    // Add the most common distortion model as sensor_msgs/CameraInfo says
+    cam_info_msg.distortion_model = "plumb_bob";
+    // Don't let distorsion matrix be empty
+    cam_info_msg.D.resize(5, 0.0);
+    // Give a reasonable default intrinsic camera matrix
+    cam_info_msg.K = boost::assign::list_of(1.0) (0.0) (img->width/2.0)
+                                           (0.0) (1.0) (img->height/2.0)
+                                           (0.0) (0.0) (1.0);
+    // Give a reasonable default rectification matrix
+    cam_info_msg.R = boost::assign::list_of (1.0) (0.0) (0.0)
+                                            (0.0) (1.0) (0.0)
+                                            (0.0) (0.0) (1.0);
+    // Give a reasonable default projection matrix
+    cam_info_msg.P = boost::assign::list_of (1.0) (0.0) (img->width/2.0) (0.0)
+                                            (0.0) (1.0) (img->height/2.0) (0.0)
+                                            (0.0) (0.0) (1.0) (0.0);
     return cam_info_msg;
 }
 
@@ -129,6 +130,7 @@ int main(int argc, char** argv)
                 msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
                 // Create a default camera info if we didn't get a stored one on initialization
                 if (cam_info_msg.distortion_model == ""){
+                    ROS_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
                     cam_info_msg = get_default_camera_info_from_image(msg);
                     cam_info_manager.setCameraInfo(cam_info_msg);
                 }
