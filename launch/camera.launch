@@ -20,7 +20,7 @@
    	<!-- images will be published at /camera_name/image with the image transports plugins (e.g.: compressed) installed -->
    	<group ns="$(arg camera_name)">
 	    <node pkg="video_stream_opencv" type="video_stream" name="$(arg camera_name)_stream" output="screen"> 
-	    	<remap from="camera" to="image" />
+	    	<remap from="camera" to="image_raw" />
 	    	<param name="camera_name" type="string" value="$(arg camera_name)" />
 	        <param name="video_stream_provider" type="string" value="$(arg video_stream_provider)" />
 	        <param name="fps" type="int" value="$(arg fps)" />
