@@ -1,3 +1,23 @@
+/*********************************************************************
+ * Software License Agreement (CC BY-NC-SA 4.0 License)
+ *
+ *  Copyright (c) 2015, PAL Robotics, S.L.
+ *  All rights reserved.
+ *
+ *  This work is licensed under the Creative Commons
+ *  Attribution-NonCommercial-ShareAlike 4.0 International License.
+ *
+ *  To view a copy of this license, visit
+ *  http://creativecommons.org/licenses/by-nc-sa/4.0/
+ *  or send a letter to
+ *  Creative Commons, 444 Castro Street, Suite 900,
+ *  Mountain View, California, 94041, USA.
+ *********************************************************************/
+
+/*
+ * @author Sammy Pfeiffer
+ */
+
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>

@@ -1,11 +1,15 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+
+Copyright (c) 2015 PAL Robotics SL.
+Released under the BSD License.
+
 Created on 7/14/15
 
 @author: Sammy Pfeiffer
 
-video_stream_opencv.py contains
+test_video_resource.py contains
 a testing code to see if opencv can open a video stream
 useful to debug if video_stream does not work
 """
