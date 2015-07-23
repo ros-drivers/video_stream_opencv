@@ -15,7 +15,7 @@
   <url type="development">https://github.com/ros-drivers/video_stream_opencv</url>
   <url type="bugtracker">https://github.com/ros-drivers/video_stream_opencv/issues</url>
 
-  <license>BSD</license>
+  <license>CC BY-NC-SA 4.0</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 
