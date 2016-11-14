@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>video_stream_opencv</name>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
 
   <description>
     The video_stream_opencv package contains a node to publish a video stream (the protocols that
