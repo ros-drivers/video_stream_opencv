@@ -8,14 +8,14 @@
     opencv supports are supported, including rtsp, webcams on /dev/video and video files) in ROS image topics, it supports camera info and basic image flipping (horizontal, vertical or both) capabilities.
   </description>
 
-  <maintainer email="sam.pfeiffer@pal-robotics.com">Sammy Pfeiffer</maintainer>
+  <maintainer email="Sammy.Pfeiffer@student.uts.edu.au">Sammy Pfeiffer</maintainer>
   <author>Sammy Pfeiffer</author>
 
   <url type="website">http://www.ros.org/wiki/video_stream_opencv</url>
   <url type="development">https://github.com/ros-drivers/video_stream_opencv</url>
   <url type="bugtracker">https://github.com/ros-drivers/video_stream_opencv/issues</url>
 
-  <license>CC BY-NC-SA 4.0</license>
+  <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
 
