@@ -109,6 +109,11 @@ int main(int argc, char** argv)
     _nh.param("flip_vertical", flip_vertical, false);
     ROS_INFO_STREAM("Flip flip_vertical image is : " << ((flip_vertical)?"true":"false"));
 
+    int width_target;
+    int height_target;
+    _nh.param("width", width_target, 640);
+    _nh.param("height", height_target, 480);
+
     // From http://docs.opencv.org/modules/core/doc/operations_on_arrays.html#void flip(InputArray src, OutputArray dst, int flipCode)
     // FLIP_HORIZONTAL == 1, FLIP_VERTICAL == 0 or FLIP_BOTH == -1
     bool flip_image = true;
@@ -126,6 +131,8 @@ int main(int argc, char** argv)
         ROS_ERROR_STREAM("Could not open the stream.");
         return -1;
     }
+    cap.set(CV_CAP_PROP_FRAME_WIDTH, width_target);
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT, height_target);
 
     ROS_INFO_STREAM("Opened the stream, starting to publish.");
 
