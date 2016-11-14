@@ -14,10 +14,11 @@
   	<arg name="flip_horizontal" default="false" />
   	<!-- flip the image vertically -->
   	<arg name="flip_vertical" default="false" />
+    <!-- force width and height, 0 means no forcing -->
+    <arg name="width" default="0"/>
+    <arg name="height" default="0"/>
   	<!-- if show a image_view window subscribed to the generated stream -->
 	<arg name="visualize" default="false"/>
-	<arg name="width" default="640"/>
-	<arg name="height" default="480"/>
 
    
    	<!-- images will be published at /camera_name/image with the image transports plugins (e.g.: compressed) installed -->

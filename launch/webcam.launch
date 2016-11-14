@@ -16,6 +16,11 @@
 	  	<arg name="flip_horizontal" value="false" />
 	  	<!-- flip the image vertically -->
 	  	<arg name="flip_vertical" value="false" />
+		<!-- force width and height, 0 means no forcing -->
+	    <!-- 
+	    <arg name="width" value="0"/>
+	    <arg name="height" value="0"/>
+		-->
 	  	<!-- visualize on an image_view window the stream generated -->
 	  	<arg name="visualize" value="true" />
    </include>

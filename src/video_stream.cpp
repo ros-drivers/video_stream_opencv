@@ -35,6 +35,8 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr
     // Fill image size
     cam_info_msg.height = img->height;
     cam_info_msg.width = img->width;
+    ROS_INFO_STREAM("The image width is: " << img->width);
+    ROS_INFO_STREAM("The image height is: " << img->height);
     // Add the most common distortion model as sensor_msgs/CameraInfo says
     cam_info_msg.distortion_model = "plumb_bob";
     // Don't let distorsion matrix be empty
@@ -103,16 +105,20 @@ int main(int argc, char** argv)
 
     bool flip_horizontal;
     _nh.param("flip_horizontal", flip_horizontal, false);
-    ROS_INFO_STREAM("Flip horizontal image is : " << ((flip_horizontal)?"true":"false"));
+    ROS_INFO_STREAM("Flip horizontal image is: " << ((flip_horizontal)?"true":"false"));
 
     bool flip_vertical;
     _nh.param("flip_vertical", flip_vertical, false);
-    ROS_INFO_STREAM("Flip flip_vertical image is : " << ((flip_vertical)?"true":"false"));
+    ROS_INFO_STREAM("Flip vertical image is: " << ((flip_vertical)?"true":"false"));
 
     int width_target;
     int height_target;
-    _nh.param("width", width_target, 640);
-    _nh.param("height", height_target, 480);
+    _nh.param("width", width_target, 0);
+    _nh.param("height", height_target, 0);
+    if (width_target != 0 && height_target != 0){
+        ROS_INFO_STREAM("Forced image width is: " << width_target);
+        ROS_INFO_STREAM("Forced image height is: " << height_target);
+    }
 
     // From http://docs.opencv.org/modules/core/doc/operations_on_arrays.html#void flip(InputArray src, OutputArray dst, int flipCode)
     // FLIP_HORIZONTAL == 1, FLIP_VERTICAL == 0 or FLIP_BOTH == -1
@@ -131,8 +137,11 @@ int main(int argc, char** argv)
         ROS_ERROR_STREAM("Could not open the stream.");
         return -1;
     }
-    cap.set(CV_CAP_PROP_FRAME_WIDTH, width_target);
-    cap.set(CV_CAP_PROP_FRAME_HEIGHT, height_target);
+    if (width_target != 0 && height_target != 0){
+        cap.set(CV_CAP_PROP_FRAME_WIDTH, width_target);
+        cap.set(CV_CAP_PROP_FRAME_HEIGHT, height_target);
+    }
+
 
     ROS_INFO_STREAM("Opened the stream, starting to publish.");
 
