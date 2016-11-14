@@ -2,7 +2,10 @@
 Changelog for package video_stream_opencv
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.0.2 (2015-07-15)
+Forthcoming
+-----------
+
+1.0.1 (2016-11-14)
 ------------------
-* Initial version
-* Contributors: Sammy Pfeiffer
+* Releasable version
+* Contributors: Sammy Pfeiffer, Stefano Probst, Wiebe Van Ranst
