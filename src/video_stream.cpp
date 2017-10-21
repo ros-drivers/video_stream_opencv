@@ -72,7 +72,27 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr
     return cam_info_msg;
 }
 
+ #include <boost/thread/thread.hpp>
+#include <boost/thread/sync_queue.hpp>
+#define MAX_QUEUE_SIZE 100
+boost::sync_queue<cv::Mat> framesQueue;
+cv::VideoCapture cap;
 
+
+void do_capture(ros::NodeHandle &nh) {
+    cv::Mat frame;
+    while (nh.ok()) {
+        cap >> frame;
+        if(!frame.empty()) {
+            if (framesQueue.size() < MAX_QUEUE_SIZE) {
+                framesQueue.push(frame.clone());
+            } else {
+                ROS_INFO_STREAM("dropped frame !");
+            }
+            //ROS_INFO_STREAM("queue size: " << framesQueue.size());
+        }
+    }
+}
 
 int main(int argc, char** argv)
 {
@@ -84,7 +104,6 @@ int main(int argc, char** argv)
 
     // provider can be an url (e.g.: rtsp://10.0.0.1:554) or a number of device, (e.g.: 0 would be /dev/video0)
     std::string video_stream_provider;
-    cv::VideoCapture cap;
     if (_nh.getParam("video_stream_provider", video_stream_provider)){
         ROS_INFO_STREAM("Resource video_stream_provider: " << video_stream_provider);
         // If we are given a string of 4 chars or less (I don't think we'll have more than 100 video devices connected)
@@ -161,7 +180,6 @@ int main(int argc, char** argv)
 
     ROS_INFO_STREAM("Opened the stream, starting to publish.");
 
-    cv::Mat frame;
     sensor_msgs::ImagePtr msg;
     sensor_msgs::CameraInfo cam_info_msg;
     std_msgs::Header header;
@@ -170,28 +188,29 @@ int main(int argc, char** argv)
     // Get the saved camera info if any
     cam_info_msg = cam_info_manager.getCameraInfo();
 
-    ros::Rate r(fps);
-    while (nh.ok()) {
-        cap >> frame;
-        if (pub.getNumSubscribers() > 0){
-            // Check if grabbed frame is actually full with some content
-            if(!frame.empty()) {
-                // Flip the image if necessary
-                if (flip_image)
-                    cv::flip(frame, frame, flip_value);
-                msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
-                // Create a default camera info if we didn't get a stored one on initialization
-                if (cam_info_msg.distortion_model == ""){
-                    ROS_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
-                    cam_info_msg = get_default_camera_info_from_image(msg);
-                    cam_info_manager.setCameraInfo(cam_info_msg);
-                }
-                // The timestamps are in sync thanks to this publisher
-                pub.publish(*msg, cam_info_msg, ros::Time::now());
-            }
+    boost::thread cap_thread(do_capture, nh);
 
-            ros::spinOnce();
+    cv::Mat frame;
+    //ros::Rate r(fps);
+    while (nh.ok()) {
+
+        framesQueue.pull(frame);
+        if (flip_image) {
+            cv::flip(frame, frame, flip_value);
         }
-        r.sleep();
+        msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
+        // Create a default camera info if we didn't get a stored one on initialization
+        if (cam_info_msg.distortion_model == ""){
+            ROS_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
+            cam_info_msg = get_default_camera_info_from_image(msg);
+            cam_info_manager.setCameraInfo(cam_info_msg);
+        }
+        // The timestamps are in sync thanks to this publisher
+        pub.publish(*msg, cam_info_msg, ros::Time::now());
+
+        ros::spinOnce();
     }
+
+    cap_thread.join();
 }
+
