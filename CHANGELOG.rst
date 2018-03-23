@@ -2,8 +2,8 @@
 Changelog for package video_stream_opencv
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.0 (2018-03-23)
+------------------
 * Update to use thread to read.
   Update to new parameters.
   Update description.
