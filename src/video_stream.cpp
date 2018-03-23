@@ -141,11 +141,11 @@ int main(int argc, char** argv)
     bool flip_image = true;
     int flip_value;
     if (flip_horizontal && flip_vertical)
-        flip_value = 0; // flip both, horizontal and vertical
+        flip_value = -1; // flip both, horizontal and vertical
     else if (flip_horizontal)
         flip_value = 1;
     else if (flip_vertical)
-        flip_value = -1;
+        flip_value = 0;
     else
         flip_image = false;
 
