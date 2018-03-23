@@ -5,6 +5,10 @@
 	  	<arg name="camera_name" value="axis_videocap" />
 	  	<!-- url of the video stream -->
 	  	<arg name="video_stream_provider" value="http://10.68.0.6/mjpg/video.mjpg" />
+	  	<!-- set camera fps to (probably does nothing on a mjpeg stream)-->
+	  	<arg name="set_camera_fps" value="30"/>
+      	<!-- set buffer queue size of frame capturing to -->
+      	<arg name="buffer_queue_size" value="100" />
 	  	<!-- throttling the querying of frames to -->
 	  	<arg name="fps" value="30" />
 	  	<!-- setting frame_id -->

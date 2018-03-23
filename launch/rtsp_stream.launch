@@ -2,9 +2,13 @@
    <!-- launch video stream -->
    <include file="$(find video_stream_opencv)/launch/camera.launch" >
    		<!-- node name and ros graph name -->
-	  	<arg name="camera_name" value="rtsp" />
+	  	<arg name="camera_name" value="rtsp2" />
 	  	<!-- url of the video stream -->
 	  	<arg name="video_stream_provider" value="rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov" />
+	  	<!-- set camera fps to (does nothing on a stream)-->
+	  	<!-- <arg name="set_camera_fps" value="30"/> -->
+      	<!-- set buffer queue size of frame capturing to -->
+      	<arg name="buffer_queue_size" value="1000" />
 	  	<!-- throttling the querying of frames to -->
 	  	<arg name="fps" value="30" />
 	  	<!-- setting frame_id -->

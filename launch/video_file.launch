@@ -4,7 +4,12 @@
    		<!-- node name and ros graph name -->
 	  	<arg name="camera_name" value="videofile" />
 	  	<!-- full path to the video file -->
-	  	<arg name="video_stream_provider" value="/home/sampfeiffer/Videos/REEM_grasping.mp4" />
+	  	<!-- wget http://techslides.com/demos/sample-videos/small.mp4 -O /tmp/small.mp4 -->
+	  	<arg name="video_stream_provider" value="/tmp/small.mp4" />
+	  	<!-- set camera fps to (video files not affected) -->
+	  	<!-- <arg name="set_camera_fps" value="30"/> -->
+      	<!-- set buffer queue size of frame capturing to -->
+      	<arg name="buffer_queue_size" value="1000" />
 	  	<!-- throttling the querying of frames to -->
 	  	<arg name="fps" value="30" />
 	  	<!-- setting frame_id -->

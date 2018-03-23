@@ -2,6 +2,10 @@
   	<arg name="camera_name" default="camera" />
   	<!-- video_stream_provider can be a number as a video device or a url of a video stream -->
   	<arg name="video_stream_provider" default="0" />
+  	<!-- set camera fps to -->
+  	<arg name="set_camera_fps" default="30" />
+  	<!-- set buffer queue size of frame capturing to -->
+  	<arg name="buffer_queue_size" default="100" />
   	<!-- frames per second to query the camera for -->
   	<arg name="fps" default="30" />
   	<!-- frame_id for the camera -->
@@ -27,7 +31,9 @@
 	    	<remap from="camera" to="image_raw" />
 	    	<param name="camera_name" type="string" value="$(arg camera_name)" />
 	        <param name="video_stream_provider" type="string" value="$(arg video_stream_provider)" />
-	        <param name="fps" type="int" value="$(arg fps)" />
+	        <param name="set_camera_fps" type="double" value="$(arg set_camera_fps)" />
+	        <param name="buffer_queue_size" type="int" value="$(arg buffer_queue_size)" />
+	        <param name="fps" type="double" value="$(arg fps)" />
 	        <param name="frame_id" type="string" value="$(arg frame_id)" />
 	        <param name="camera_info_url" type="string" value="$(arg camera_info_url)" />
 	        <param name="flip_horizontal" type="bool" value="$(arg flip_horizontal)" />

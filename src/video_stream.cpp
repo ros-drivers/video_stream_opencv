@@ -42,6 +42,12 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sstream>
 #include <boost/assign/list_of.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/sync_queue.hpp>
+
+boost::sync_queue<cv::Mat> framesQueue;
+cv::VideoCapture cap;
+int max_queue_size;
 
 // Based on the ros tutorial on transforming opencv images to Image messages
 
@@ -73,6 +79,26 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr
 }
 
 
+void do_capture(ros::NodeHandle &nh) {
+    cv::Mat frame;
+    cv::Mat _drop_frame;
+    // Read frames as fast as possible
+    while (nh.ok()) {
+        cap >> frame;
+        if(!frame.empty()) {
+            // accumulate only until max_queue_size
+            if (framesQueue.size() < max_queue_size) {
+                framesQueue.push(frame.clone());
+            }
+            // once reached, drop the oldest frame
+            else {
+                framesQueue.pull(_drop_frame);
+                framesQueue.push(frame.clone());
+            }
+        }
+    }
+}
+
 
 int main(int argc, char** argv)
 {
@@ -84,7 +110,6 @@ int main(int argc, char** argv)
 
     // provider can be an url (e.g.: rtsp://10.0.0.1:554) or a number of device, (e.g.: 0 would be /dev/video0)
     std::string video_stream_provider;
-    cv::VideoCapture cap;
     if (_nh.getParam("video_stream_provider", video_stream_provider)){
         ROS_INFO_STREAM("Resource video_stream_provider: " << video_stream_provider);
         // If we are given a string of 4 chars or less (I don't think we'll have more than 100 video devices connected)
@@ -106,10 +131,34 @@ int main(int argc, char** argv)
     std::string camera_name;
     _nh.param("camera_name", camera_name, std::string("camera"));
     ROS_INFO_STREAM("Camera name: " << camera_name);
+    
+    double set_camera_fps;
+    _nh.param("set_camera_fps", set_camera_fps, 30.0);
+    ROS_INFO_STREAM("Setting camera FPS to: " << set_camera_fps);
+    cap.set(CV_CAP_PROP_FPS, set_camera_fps);
+    
+    double reported_camera_fps;
+    // OpenCV 2.4 returns -1 (instead of a 0 as the spec says) and prompts an error
+    // HIGHGUI ERROR: V4L2: Unable to get property <unknown property string>(5) - Invalid argument
+    reported_camera_fps = cap.get(CV_CAP_PROP_FPS);
+    if (reported_camera_fps > 0.0)
+        ROS_INFO_STREAM("Camera reports FPS: " << reported_camera_fps);
+    else
+        ROS_INFO_STREAM("Backend can't provide camera FPS information");
+    
+    int buffer_queue_size;
+    _nh.param("buffer_queue_size", buffer_queue_size, 100);
+    ROS_INFO_STREAM("Setting buffer size for capturing frames to: " << buffer_queue_size);
+    max_queue_size = buffer_queue_size;
 
-    int fps;
-    _nh.param("fps", fps, 240);
+    double fps;
+    _nh.param("fps", fps, 240.0);
     ROS_INFO_STREAM("Throttling to fps: " << fps);
+    
+    if (video_stream_provider.size() < 4 && fps > set_camera_fps)
+        ROS_WARN_STREAM("Asked to publish at 'fps' (" << fps
+        << ") which is higher than the 'set_camera_fps' (" << set_camera_fps <<
+        "), we can't publish faster than the camera provides images.");
 
     std::string frame_id;
     _nh.param("frame_id", frame_id, std::string("camera"));
@@ -158,9 +207,6 @@ int main(int argc, char** argv)
         cap.set(CV_CAP_PROP_FRAME_HEIGHT, height_target);
     }
 
-
-    ROS_INFO_STREAM("Opened the stream, starting to publish.");
-
     cv::Mat frame;
     sensor_msgs::ImagePtr msg;
     sensor_msgs::CameraInfo cam_info_msg;
@@ -169,12 +215,16 @@ int main(int argc, char** argv)
     camera_info_manager::CameraInfoManager cam_info_manager(nh, camera_name, camera_info_url);
     // Get the saved camera info if any
     cam_info_msg = cam_info_manager.getCameraInfo();
+    
+    ROS_INFO_STREAM("Opened the stream, starting to publish.");
+    boost::thread cap_thread(do_capture, nh);
 
     ros::Rate r(fps);
     while (nh.ok()) {
-        cap >> frame;
+        framesQueue.pull(frame);
+
         if (pub.getNumSubscribers() > 0){
-            // Check if grabbed frame is actually full with some content
+            // Check if grabbed frame is actually filled with some content
             if(!frame.empty()) {
                 // Flip the image if necessary
                 if (flip_image)
@@ -194,4 +244,5 @@ int main(int argc, char** argv)
         }
         r.sleep();
     }
+    cap_thread.join();
 }

@@ -5,6 +5,10 @@
 	  	<arg name="camera_name" value="webcam" />
 	  	<!-- means video device 0, /dev/video0 -->
 	  	<arg name="video_stream_provider" value="0" />
+	  	<!-- set camera fps to (if the device allows) -->
+	  	<arg name="set_camera_fps" value="30"/>
+      	<!-- set buffer queue size of frame capturing to (1 means we want the latest frame only) -->
+      	<arg name="buffer_queue_size" value="1" />
 	  	<!-- throttling the querying of frames to -->
 	  	<arg name="fps" value="30" />
 	  	<!-- setting frame_id -->
@@ -17,7 +21,7 @@
 	  	<!-- flip the image vertically -->
 	  	<arg name="flip_vertical" value="false" />
 		<!-- force width and height, 0 means no forcing -->
-	    <!-- 
+	    <!--
 	    <arg name="width" value="0"/>
 	    <arg name="height" value="0"/>
 		-->

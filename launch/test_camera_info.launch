@@ -5,6 +5,10 @@
 	  	<arg name="camera_name" value="rtsp" />
 	  	<!-- url of the video stream -->
 	  	<arg name="video_stream_provider" value="rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov" />
+	  	<!-- set camera fps to -->
+	  	<arg name="set_camera_fps" value="30"/>
+      	<!-- set buffer queue size of frame capturing to -->
+      	<arg name="buffer_queue_size" value="10" />
 	  	<!-- throttling the querying of frames to -->
 	  	<arg name="fps" value="30" />
 	  	<!-- setting frame_id -->
