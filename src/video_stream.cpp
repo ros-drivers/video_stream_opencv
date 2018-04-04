@@ -47,6 +47,8 @@
 
 boost::sync_queue<cv::Mat> framesQueue;
 cv::VideoCapture cap;
+std::string camera_name;
+double set_camera_fps;
 int max_queue_size;
 
 // Based on the ros tutorial on transforming opencv images to Image messages
@@ -85,6 +87,11 @@ void do_capture(ros::NodeHandle &nh) {
     // Read frames as fast as possible
     while (nh.ok()) {
         cap >> frame;
+	if (camera_name == "videofile")
+	{
+         ros::Rate camera_fps_rate(set_camera_fps);
+         camera_fps_rate.sleep();
+	}
         if(!frame.empty()) {
             // accumulate only until max_queue_size
             if (framesQueue.size() < max_queue_size) {
@@ -128,11 +135,9 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    std::string camera_name;
     _nh.param("camera_name", camera_name, std::string("camera"));
     ROS_INFO_STREAM("Camera name: " << camera_name);
     
-    double set_camera_fps;
     _nh.param("set_camera_fps", set_camera_fps, 30.0);
     ROS_INFO_STREAM("Setting camera FPS to: " << set_camera_fps);
     cap.set(CV_CAP_PROP_FPS, set_camera_fps);
