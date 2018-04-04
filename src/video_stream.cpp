@@ -84,12 +84,14 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr
 void do_capture(ros::NodeHandle &nh) {
     cv::Mat frame;
     cv::Mat _drop_frame;
+
+    ros::Rate camera_fps_rate(set_camera_fps);
+
     // Read frames as fast as possible
     while (nh.ok()) {
         cap >> frame;
 	if (camera_name == "videofile")
 	{
-         ros::Rate camera_fps_rate(set_camera_fps);
          camera_fps_rate.sleep();
 	}
         if(!frame.empty()) {
