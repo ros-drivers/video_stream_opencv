@@ -215,6 +215,7 @@ int main(int argc, char** argv)
     }
 
     cv::Mat frame;
+    bool first_run = true;
     sensor_msgs::ImagePtr msg;
     sensor_msgs::CameraInfo cam_info_msg;
     std_msgs::Header header;
@@ -244,6 +245,20 @@ int main(int argc, char** argv)
                     cam_info_msg = get_default_camera_info_from_image(msg);
                     cam_info_manager.setCameraInfo(cam_info_msg);
                 }
+
+                if (first_run) {
+                    first_run = false;
+                    uint64_t memusage = 1.0 * max_queue_size * (uint32_t(frame.dataend) - uint32_t(frame.datastart)) / 1048576;
+                    // MB of RAM
+                    if (memusage > 512) {
+                       ROS_WARN_STREAM("WARNING. Queue size: " << max_queue_size << " * allocated image size: "
+                        << uint32_t(frame.dataend) - uint32_t(frame.datastart)
+                        << " may occupy up to: " << memusage << " MB of RAM");
+                       ROS_WARN_STREAM("especially on slow CPUs like on Raspberry Pi where exact timings cannot be met.");
+                       ROS_WARN_STREAM("Reduce the queue size if memory consumption becomes too high.");
+                    }
+                }
+
                 // The timestamps are in sync thanks to this publisher
                 pub.publish(*msg, cam_info_msg, ros::Time::now());
             }
