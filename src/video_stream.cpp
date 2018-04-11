@@ -228,7 +228,8 @@ int main(int argc, char** argv)
 
     ros::Rate r(fps);
     while (nh.ok()) {
-        framesQueue.pull(frame);
+	if (!framesQueue.empty())
+		framesQueue.pull(frame);
 
         if (pub.getNumSubscribers() > 0){
             // Check if grabbed frame is actually filled with some content
