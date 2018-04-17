@@ -41,13 +41,14 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sstream>
+#include <fstream>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/sync_queue.hpp>
 
 boost::sync_queue<cv::Mat> framesQueue;
 cv::VideoCapture cap;
-std::string camera_name;
+std::string video_stream_provider_type;
 double set_camera_fps;
 int max_queue_size;
 
@@ -90,7 +91,7 @@ void do_capture(ros::NodeHandle &nh) {
     // Read frames as fast as possible
     while (nh.ok()) {
         cap >> frame;
-	if (camera_name == "videofile")
+	if (video_stream_provider_type == "videofile")
 	{
          camera_fps_rate.sleep();
 	}
@@ -125,10 +126,28 @@ int main(int argc, char** argv)
         // treat is as a number and act accordingly so we open up the videoNUMBER device
         if (video_stream_provider.size() < 4){
             ROS_INFO_STREAM("Getting video from provider: /dev/video" << video_stream_provider);
+            video_stream_provider_type = "videodevice";
             cap.open(atoi(video_stream_provider.c_str()));
         }
         else{
             ROS_INFO_STREAM("Getting video from provider: " << video_stream_provider);
+            if (video_stream_provider.find("http://") != std::string::npos || 
+                video_stream_provider.find("https://") != std::string::npos){
+                video_stream_provider_type = "http_stream";
+            }
+            else if(video_stream_provider.find("rtsp://") != std::string::npos){
+                video_stream_provider_type = "rtsp_stream";
+            }
+            else {
+                // Check if file exists to know if it's a videofile
+                std::ifstream ifs;
+                ifs.open(video_stream_provider.c_str(), std::ifstream::in);
+                if (ifs.good()){
+                    video_stream_provider_type = "videofile";
+                }
+                else
+                    video_stream_provider_type = "unknown";
+            }
             cap.open(video_stream_provider);
         }
     }
@@ -137,6 +156,9 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    ROS_INFO_STREAM("Video stream provider type detected: " << video_stream_provider_type);
+
+    std::string camera_name;
     _nh.param("camera_name", camera_name, std::string("camera"));
     ROS_INFO_STREAM("Camera name: " << camera_name);
     
