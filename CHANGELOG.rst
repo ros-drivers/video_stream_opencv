@@ -2,8 +2,8 @@
 Changelog for package video_stream_opencv
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.1 (2018-04-20)
+------------------
 * Fix error of using camera_name instead of identifying the type of the provider
   to check when the provider is a video file, and act accordingly in the producer thread
 * Prevent locking when ROS SIGINT arrives and the image queue is empty.
