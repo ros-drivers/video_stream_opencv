@@ -244,6 +244,7 @@ int main(int argc, char** argv)
     camera_info_manager::CameraInfoManager cam_info_manager(nh, camera_name, camera_info_url);
     // Get the saved camera info if any
     cam_info_msg = cam_info_manager.getCameraInfo();
+    cam_info_msg.header = header;
     
     ROS_INFO_STREAM("Opened the stream, starting to publish.");
     boost::thread cap_thread(do_capture, nh);
