@@ -86,8 +86,6 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr
 
 void do_capture(ros::NodeHandle &nh) {
     cv::Mat frame;
-    cv::Mat _drop_frame;
-
     ros::Rate camera_fps_rate(set_camera_fps);
 
     // Read frames as fast as possible
@@ -98,18 +96,16 @@ void do_capture(ros::NodeHandle &nh) {
             camera_fps_rate.sleep();
         }
 
-        {
+        if(!frame.empty()) {
             std::lock_guard<std::mutex> g(q_mutex);
-            if(!frame.empty()) {
-                // accumulate only until max_queue_size
-                if (framesQueue.size() < max_queue_size) {
-                    framesQueue.push(frame);
-                }
-                // once reached, drop the oldest frame
-                else {
-                    framesQueue.pop();
-                    framesQueue.push(frame);
-                }
+            // accumulate only until max_queue_size
+            if (framesQueue.size() < max_queue_size) {
+                framesQueue.push(frame);
+            }
+            // once reached, drop the oldest frame
+            else {
+                framesQueue.pop();
+                framesQueue.push(frame);
             }
         }
     }
