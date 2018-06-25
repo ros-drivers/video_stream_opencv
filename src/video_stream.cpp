@@ -34,22 +34,26 @@
  * @author Sammy Pfeiffer
  */
 
-#include <sstream>
-#include <fstream>
+#include <functional>
+#include <thread>
+
+#include <boost/pointer_cast.hpp>
 
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <camera_info_manager/camera_info_manager.h>
 #include <cv_bridge/cv_bridge.h>
 
-#include <boost/assign/list_of.hpp>
-#include <boost/thread/thread.hpp>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/CameraInfo.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include <video_stream_provider/image_capture.hpp>
+
 // Based on the ros tutorial on transforming opencv images to Image messages
-sensor_msgs::CameraInfo get_default_camera_info_from_image_msg(sensor_msgs::ImagePtr img) {
+sensor_msgs::CameraInfo get_default_camera_info_from_image_msg(const sensor_msgs::ImageConstPtr img) {
     sensor_msgs::CameraInfo cam_info_msg;
     cam_info_msg.header = img->header;
     // Fill image size
@@ -69,13 +73,13 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image_msg(sensor_msgs::Imag
                       0.0, 1.0, 0.0,
                       0.0, 0.0, 1.0};
     // Give a reasonable default projection matrix
-    cam_info_msg.P = {1.0, 0.0, img->width/2.0, 0.0
-                      0.0, 0.0, img->height/2.0, 0.0
+    cam_info_msg.P = {1.0, 0.0, img->width/2.0, 0.0,
+                      0.0, 0.0, img->height/2.0, 0.0,
                       0.0, 0.0, 1.0, 0.0};
     return cam_info_msg;
 }
 
-void do_capture(const ImageCapture& cap) {
+void capture_frames(const ImageCapture& cap) {
     ros::Rate camera_fps_rate(cap.camera_fps);
     cv::Mat frame;
 
@@ -91,13 +95,110 @@ void do_capture(const ImageCapture& cap) {
     }
 }
 
+/*
+ * If flip_image:bool is false, using flip_value:int is undefined behavior
+ * From http://docs.opencv.org/modules/core/doc/operations_on_arrays.html#void flip(InputArray src, OutputArray dst, int flipCode
+ * FLIP_HORIZONTAL == 1, FLIP_VERTICAL == 0 or FLIP_BOTH == -1
+ */
+std::tuple<bool, int> get_flip_value(bool flip_horizontal, bool flip_vertical) {
+    bool flip_image = true;
+    int flip_value;
+    if (flip_horizontal && flip_vertical) {
+        flip_value = -1;  // flip both, horizontal and vertical
+    }
+    else if (flip_horizontal) {
+        flip_value = 1;
+    }
+    else if (flip_vertical) {
+        flip_value = 0;
+    }
+    else {
+        flip_image = false;
+    }
+    return std::make_tuple(flip_image, flip_value);
+}
+
+void consume_frames(const ImageCapture &cap,
+                    double fps = 240.0,
+                    double topic = "camera",
+                    const std::string frame_id = "camera",
+                    const std::string camera_info_url = "",
+                    const bool flip_image = false,
+                    const int flip_value = 0) {
+    ros::NodeHandle nh;
+    return consume_frames(nh, cap, fps, frame_id, camera_info_url, flip_image, flip_value);
+}
+void consume_frames(const ros::NodeHandle &nh,
+                    const ImageCapture &cap,
+                    double fps = 240.0,
+                    double topic = "camera",
+                    const std::string frame_id = "camera",
+                    const std::string camera_info_url = "",
+                    const bool flip_image = false,
+                    const int flip_value = 0) {
+    image_transport::ImageTransport it(nh);
+    image_transport::CameraPublisher pub = it.advertiseCamera("camera", 1);
+
+    sensor_msgs::ImagePtr msg;
+    sensor_msgs::CameraInfo cam_info_msg;
+
+    std_msgs::Header header;
+    header.frame_id = frame_id;
+    camera_info_manager::CameraInfoManager cam_info_manager(nh, topic, camera_info_url);
+    // Get the saved camera info if any
+    cam_info_msg = cam_info_manager.getCameraInfo();
+    cam_info_msg.header = header;
+
+    // Create a default camera info if we didn't get a stored one on initialization
+    if (cam_info_msg.distortion_model == "") {
+        ROS_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
+        cam_info_msg = get_default_camera_info_from_image_msg(
+                boost::const_pointer_cast<const sensor_msgs::Image>(msg));
+        cam_info_manager.setCameraInfo(cam_info_msg);
+    }
+
+    ros::Rate r(fps);
+    cv::Mat frame;
+    while (ros::ok()) {
+        ros::spinOnce();
+        r.sleep();
+
+        if (cap.empty()) {
+            continue;
+        }
+
+        cap.pull(frame);
+        // Check if grabbed frame is actually filled with some content
+        // If so, is anyone listening?
+        if (frame.empty() ||
+            pub.getNumSubscribers() == 0) {
+            continue;
+        }
+
+        // Flip the image if necessary
+        if (flip_image) {
+            cv::flip(frame, frame, flip_value);
+        }
+        msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
+
+        // The timestamps are in sync thanks to this publisher
+        pub.publish(*msg, cam_info_msg, ros::Time::now());
+    }
+}
+
+#define GET_PARAM_NAME(NH, T, VAR, NAME, DEFAULT, MESSAGE)                    \
+    T VAR;                                                                    \
+    NH.param(NAME, VAR, T(DEFAULT));                                          \
+    ROS_INFO_STREAM(MESSAGE << VAR);
+#define GET_PARAM(NH, T, VAR, DEFAULT, MESSAGE)                               \
+    T VAR;                                                                    \
+    NH.param(#VAR, VAR, T(DEFAULT));                                          \
+    ROS_INFO_STREAM(MESSAGE << VAR);
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "image_publisher");
-    ros::NodeHandle nh;
     ros::NodeHandle _nh("~"); // to get the private params
-    image_transport::ImageTransport it(nh);
-    image_transport::CameraPublisher pub = it.advertiseCamera("camera", 1);
 
     // provider can be an url (e.g.: rtsp://10.0.0.1:554) or a number of device, (e.g.: 0 would be /dev/video0)
     std::string video_stream_provider;
@@ -109,33 +210,13 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    std::string camera_name;
-    _nh.param("camera_name", camera_name, std::string("camera"));
-    ROS_INFO_STREAM("Camera name: " << camera_name);
+    GET_PARAM(_nh, std::string, camera_name, "camera", "Camera name: ");
 
-    _nh.param("set_camera_fps", camera_fps, 30.0);
-    ROS_INFO_STREAM("Setting camera FPS to: " << camera_fps);
-    cap.set(CV_CAP_PROP_FPS, camera_fps);
+    GET_PARAM(_nh, double, camera_fps, 30.0, "Query rate for images from camera: ");
 
-    double reported_camera_fps;
-    // OpenCV 2.4 returns -1 (instead of a 0 as the spec says) and prompts an error
-    // HIGHGUI ERROR: V4L2: Unable to get property <unknown property string>(5) - Invalid argument
-    reported_camera_fps = cap.get(CV_CAP_PROP_FPS);
-    if (reported_camera_fps > 0.0) {
-        ROS_INFO_STREAM("Camera reports FPS: " << reported_camera_fps);
-    }
-    else {
-        ROS_INFO_STREAM("Backend can't provide camera FPS information");
-    }
+    GET_PARAM(_nh, int, buffer_queue_size, 100, "Buffer size for captured frames: ");
 
-    int buffer_queue_size;
-    _nh.param("buffer_queue_size", buffer_queue_size, 100);
-    ROS_INFO_STREAM("Setting buffer size for capturing frames to: " << buffer_queue_size);
-    max_queue_size = buffer_queue_size;
-
-    double fps;
-    _nh.param("fps", fps, 240.0);
-    ROS_INFO_STREAM("Throttling to fps: " << fps);
+    GET_PARAM(_nh, double, fps, 240.0, "Throttling rate for image publisher: ");
 
     if (video_stream_provider.size() < 4 && fps > camera_fps) {
         ROS_WARN_STREAM("Asked to publish at 'fps' (" << fps <<
@@ -143,96 +224,50 @@ int main(int argc, char** argv)
                         "), we can't publish faster than the camera provides images.");
     }
 
-    std::string frame_id;
-    _nh.param("frame_id", frame_id, std::string("camera"));
-    ROS_INFO_STREAM("Publishing with frame_id: " << frame_id);
+    GET_PARAM(_nh, std::string, frame_id, camera_name, "Frame id in image header: ");
 
-    std::string camera_info_url;
-    _nh.param("camera_info_url", camera_info_url, std::string(""));
-    ROS_INFO_STREAM("Provided camera_info_url: '" << camera_info_url << "'");
+    GET_PARAM(_nh, std::string, camera_info_url, "", "camera_info_url: ");
 
-    bool flip_horizontal;
-    _nh.param("flip_horizontal", flip_horizontal, false);
-    ROS_INFO_STREAM("Flip horizontal image is: " << ((flip_horizontal)?"true":"false"));
+    GET_PARAM(_nh, bool, flip_horizontal, false, "Flip horizontally? : ");
 
-    bool flip_vertical;
-    _nh.param("flip_vertical", flip_vertical, false);
-    ROS_INFO_STREAM("Flip vertical image is: " << ((flip_vertical)?"true":"false"));
+    GET_PARAM(_nh, bool, flip_vertical, false, "Flip vertically? : ");
 
-    int width_target;
-    int height_target;
+    int width_target, height_target;
     _nh.param("width", width_target, 0);
     _nh.param("height", height_target, 0);
-    if (width_target != 0 && height_target != 0) {
+    if (width_target && height_target) {
         ROS_INFO_STREAM("Forced image width is: " << width_target);
         ROS_INFO_STREAM("Forced image height is: " << height_target);
     }
 
-    // From http://docs.opencv.org/modules/core/doc/operations_on_arrays.html#void flip(InputArray src, OutputArray dst, int flipCode)
-    // FLIP_HORIZONTAL == 1, FLIP_VERTICAL == 0 or FLIP_BOTH == -1
-    bool flip_image = true;
+    bool flip_image;
     int flip_value;
-    if (flip_horizontal && flip_vertical) {
-        flip_value = -1; // flip both, horizontal and vertical
-    }
-    else if (flip_horizontal) {
-        flip_value = 1;
-    }
-    else if (flip_vertical) {
-        flip_value = 0;
-    }
-    else {
-        flip_image = false;
-    }
+    std::tie(flip_image, flip_value) = get_flip_value(flip_horizontal, flip_vertical);
 
+    auto cap = ImageCapture{video_stream_provider, camera_fps, buffer_queue_size, true};
     if(!cap.isOpened()) {
         ROS_ERROR_STREAM("Could not open the stream.");
         return -1;
     }
-    if (width_target != 0 && height_target != 0) {
+
+    cap.set(CV_CAP_PROP_FPS, camera_fps);
+    if (width_target && height_target) {
         cap.set(CV_CAP_PROP_FRAME_WIDTH, width_target);
         cap.set(CV_CAP_PROP_FRAME_HEIGHT, height_target);
     }
 
-    cv::Mat frame;
-    sensor_msgs::ImagePtr msg;
-    sensor_msgs::CameraInfo cam_info_msg;
-    std_msgs::Header header;
-    header.frame_id = frame_id;
-    camera_info_manager::CameraInfoManager cam_info_manager(nh, camera_name, camera_info_url);
-    // Get the saved camera info if any
-    cam_info_msg = cam_info_manager.getCameraInfo();
-    cam_info_msg.header = header;
+    // OpenCV 2.4 returns -1 (instead of a 0 as the spec says) and prompts an error
+    // HIGHGUI ERROR: V4L2: Unable to get property <unknown property string>(5) - Invalid argument
+    double reported_camera_fps = cap.get(CV_CAP_PROP_FPS);
+    if (reported_camera_fps > 0.0) {
+        ROS_INFO_STREAM("Camera reports FPS: " << reported_camera_fps);
+    }
+    else {
+        ROS_INFO_STREAM("Backend can't provide camera FPS information");
+    }
 
     ROS_INFO_STREAM("Opened the stream, starting to publish.");
-    boost::thread cap_thread(do_capture, nh);
-
-    ros::Rate r(fps);
-    while (nh.ok()) {
-        if (!framesQueue.empty()) {
-            framesQueue.pull(frame);
-        }
-
-        if (pub.getNumSubscribers() > 0) {
-            // Check if grabbed frame is actually filled with some content
-            if(!frame.empty()) {
-                // Flip the image if necessary
-                if (flip_image) {
-                    cv::flip(frame, frame, flip_value);
-                }
-                msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
-                // Create a default camera info if we didn't get a stored one on initialization
-                if (cam_info_msg.distortion_model == "") {
-                    ROS_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
-                    cam_info_msg = get_default_camera_info_from_image_msg(msg);
-                    cam_info_manager.setCameraInfo(cam_info_msg);
-                }
-                // The timestamps are in sync thanks to this publisher
-                pub.publish(*msg, cam_info_msg, ros::Time::now());
-            }
-            ros::spinOnce();
-        }
-        r.sleep();
-    }
+    std::thread cap_thread(capture_frames, std::cref(cap));
+    consume_frames(cap, fps, camera_name, frame_id, camera_info_url, flip_image, flip_value);
     cap_thread.join();
 }

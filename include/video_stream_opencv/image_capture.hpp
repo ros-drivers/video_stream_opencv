@@ -75,7 +75,19 @@ struct ImageCapture
                 video_stream_provider_ == StreamType::IMG_SEQ);
     }
 
-    // wrap get, set, grab, retrieve, read and >> for VideoCapture
+    // wrap get, set, isOpened, grab, retrieve, read and >> for VideoCapture
+    double get(int propId) {
+        return cap_.get(propId);
+    }
+
+    bool set(int propId, double value) {
+        return cap_.set(propId, value)
+    }
+
+    bool isOpened() {
+        return cap_.isOpened();
+    }
+
     bool grab() {
         bool ret = cap_.grab();
         if (ret == false && loop_ == true)
@@ -88,8 +100,7 @@ struct ImageCapture
     }
 
     bool retrieve(cv::OutputArray &arr) {
-        bool ret = cap_.retrieve(arr);
-        return ret;
+        return cap_.retrieve(arr);
     }
 
     bool read(cv::OutputArray &arr) {
@@ -123,6 +134,10 @@ struct ImageCapture
 
     void pull(cv::Mat &img) {
         framesQueue_.pull(img);
+    }
+
+    bool empty() {
+        return framesQueue_.empty();
     }
 
     private:
