@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.1)
 project(video_stream_opencv)
 
 find_package(catkin REQUIRED COMPONENTS
@@ -10,10 +10,14 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
 )
 
-find_package(Boost REQUIRED COMPONENTS thread)
+find_package(Boost REQUIRED COMPONENTS thread smart_ptr)
 find_package(OpenCV REQUIRED)
 
-catkin_package()
+catkin_package(
+  INCLUDE_DIRS include
+  CATKIN_DEPENDS cv_bridge camera_info_manager image_transport roscpp rospy
+                 sensor_msgs
+)
 
 include_directories(SYSTEM
   ${catkin_INCLUDE_DIRS}
