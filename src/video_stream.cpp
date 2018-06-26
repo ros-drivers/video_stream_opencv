@@ -85,7 +85,7 @@ using namespace video_stream_opencv;
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "image_publisher");
+    ros::init(argc, argv, "video_stream");
     ros::NodeHandle _nh("~"); // to get the private params
 
     // provider can be an url (e.g.: rtsp://10.0.0.1:554) or a number of device, (e.g.: 0 would be /dev/video0)

@@ -53,7 +53,7 @@ void capture_frames(ImageCapture& cap) {
 
     // Read frames as fast as possible
     while (ros::ok()) {
-        cap >> frame;
+        cap.read(frame);
         if (cap.isFile()) {
             camera_fps_rate.sleep();
         }
@@ -109,14 +109,6 @@ void consume_frames(const ros::NodeHandle &nh,
     cam_info_msg = cam_info_manager.getCameraInfo();
     cam_info_msg.header = header;
 
-    // Create a default camera info if we didn't get a stored one on initialization
-    if (cam_info_msg.distortion_model == "") {
-        ROS_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
-        cam_info_msg = get_default_camera_info_from_image_msg(
-                boost::const_pointer_cast<const sensor_msgs::Image>(msg));
-        cam_info_manager.setCameraInfo(cam_info_msg);
-    }
-
     ros::Rate r(fps);
     cv::Mat frame;
     while (ros::ok()) {
@@ -140,6 +132,14 @@ void consume_frames(const ros::NodeHandle &nh,
             cv::flip(frame, frame, flip_value);
         }
         msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
+
+        // Create a default camera info if we didn't get a stored one on initialization
+        if (cam_info_msg.distortion_model == "") {
+            ROS_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
+            cam_info_msg = get_default_camera_info_from_image_msg(
+                    boost::const_pointer_cast<const sensor_msgs::Image>(msg));
+            cam_info_manager.setCameraInfo(cam_info_msg);
+        }
 
         // The timestamps are in sync thanks to this publisher
         pub.publish(*msg, cam_info_msg, ros::Time::now());

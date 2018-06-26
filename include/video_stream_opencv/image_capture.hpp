@@ -107,7 +107,10 @@ struct ImageCapture
         if (grab()) {
             return retrieve(arr);
         }
-        return false;
+        else {
+            arr.release();
+        }
+        return arr.empty();
     }
 
     ImageCapture& operator>> (cv::UMat &img) {
