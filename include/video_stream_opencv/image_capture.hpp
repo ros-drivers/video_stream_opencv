@@ -7,8 +7,8 @@
 
 #include <boost/thread/sync_queue.hpp>
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/videoio/videoio.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/videoio.hpp>
 
 namespace video_stream_opencv {
 namespace {
@@ -99,7 +99,7 @@ struct ImageCapture
         return ret;
     }
 
-    bool retrieve(cv::OutputArray &arr) {
+    bool retrieve(cv::OutputArray &arr) const {
         return cap_.retrieve(arr);
     }
 
@@ -136,7 +136,7 @@ struct ImageCapture
         framesQueue_.pull(img);
     }
 
-    bool empty() {
+    bool empty() const {
         return framesQueue_.empty();
     }
 

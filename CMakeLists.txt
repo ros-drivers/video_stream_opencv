@@ -3,6 +3,7 @@ project(video_stream_opencv)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  roslib
   rospy
   cv_bridge
   image_transport
@@ -15,8 +16,8 @@ find_package(OpenCV REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS cv_bridge camera_info_manager image_transport roscpp rospy
-                 sensor_msgs
+  CATKIN_DEPENDS cv_bridge camera_info_manager image_transport roscpp roslib
+                 rospy sensor_msgs
 )
 
 include_directories(SYSTEM
@@ -33,16 +34,11 @@ set(INCLUDE_LIBS
   ${Boost_LIBRARIES}
 )
 
-if(1)
 add_executable(video_stream src/video_stream.cpp)
-target_link_libraries(video_stream ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(video_stream ${INCLUDE_LIBS})
 
 install(TARGETS video_stream
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-endif(1)
-
-add_executable(main src/main.cpp)
-target_link_libraries(main ${INCLUDE_LIBS})
 
 install(PROGRAMS scripts/test_video_resource.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
