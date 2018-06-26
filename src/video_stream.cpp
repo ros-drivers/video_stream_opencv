@@ -34,6 +34,7 @@
  * @author Sammy Pfeiffer
  */
 
+#include <cstdint>
 #include <functional>
 #include <thread>
 
@@ -50,7 +51,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <video_stream_provider/image_capture.hpp>
+#include <video_stream_opencv/image_capture.hpp>
+
+using namespace video_stream_opencv;
 
 // Based on the ros tutorial on transforming opencv images to Image messages
 sensor_msgs::CameraInfo get_default_camera_info_from_image_msg(const sensor_msgs::ImageConstPtr img) {
@@ -79,7 +82,7 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image_msg(const sensor_msgs
     return cam_info_msg;
 }
 
-void capture_frames(const ImageCapture& cap) {
+void capture_frames(ImageCapture& cap) {
     ros::Rate camera_fps_rate(cap.camera_fps);
     cv::Mat frame;
 
@@ -118,20 +121,10 @@ std::tuple<bool, int> get_flip_value(bool flip_horizontal, bool flip_vertical) {
     return std::make_tuple(flip_image, flip_value);
 }
 
-void consume_frames(const ImageCapture &cap,
-                    double fps = 240.0,
-                    double topic = "camera",
-                    const std::string frame_id = "camera",
-                    const std::string camera_info_url = "",
-                    const bool flip_image = false,
-                    const int flip_value = 0) {
-    ros::NodeHandle nh;
-    return consume_frames(nh, cap, fps, frame_id, camera_info_url, flip_image, flip_value);
-}
 void consume_frames(const ros::NodeHandle &nh,
-                    const ImageCapture &cap,
+                    ImageCapture &cap,
                     double fps = 240.0,
-                    double topic = "camera",
+                    std::string topic = "camera",
                     const std::string frame_id = "camera",
                     const std::string camera_info_url = "",
                     const bool flip_image = false,
@@ -185,6 +178,16 @@ void consume_frames(const ros::NodeHandle &nh,
         pub.publish(*msg, cam_info_msg, ros::Time::now());
     }
 }
+void consume_frames(ImageCapture &cap,
+                    double fps = 240.0,
+                    std::string topic = "camera",
+                    const std::string frame_id = "camera",
+                    const std::string camera_info_url = "",
+                    const bool flip_image = false,
+                    const int flip_value = 0) {
+    ros::NodeHandle nh;
+    consume_frames(nh, cap, fps, topic, frame_id, camera_info_url, flip_image, flip_value);
+}
 
 #define GET_PARAM_NAME(NH, T, VAR, NAME, DEFAULT, MESSAGE)                    \
     T VAR;                                                                    \
@@ -215,6 +218,10 @@ int main(int argc, char** argv)
     GET_PARAM(_nh, double, camera_fps, 30.0, "Query rate for images from camera: ");
 
     GET_PARAM(_nh, int, buffer_queue_size, 100, "Buffer size for captured frames: ");
+    if (buffer_queue_size < 0) {
+        ROS_ERROR_STREAM("Buffer size can't be negative, setting to default value");
+        buffer_queue_size = 100;
+    }
 
     GET_PARAM(_nh, double, fps, 240.0, "Throttling rate for image publisher: ");
 
@@ -244,7 +251,7 @@ int main(int argc, char** argv)
     int flip_value;
     std::tie(flip_image, flip_value) = get_flip_value(flip_horizontal, flip_vertical);
 
-    auto cap = ImageCapture{video_stream_provider, camera_fps, buffer_queue_size, true};
+    ImageCapture cap{video_stream_provider, camera_fps, uint16_t(buffer_queue_size), true};
     if(!cap.isOpened()) {
         ROS_ERROR_STREAM("Could not open the stream.");
         return -1;
@@ -267,7 +274,7 @@ int main(int argc, char** argv)
     }
 
     ROS_INFO_STREAM("Opened the stream, starting to publish.");
-    std::thread cap_thread(capture_frames, std::cref(cap));
+    std::thread cap_thread{capture_frames, std::ref(cap)};
     consume_frames(cap, fps, camera_name, frame_id, camera_info_url, flip_image, flip_value);
     cap_thread.join();
 }

@@ -10,7 +10,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/videoio/videoio.hpp>
 
-namespace video_stream {
+namespace video_stream_opencv {
 namespace {
 const double _CAPTURE_FPS = 30;
 const unsigned int _MAX_QUEUE_SIZE = 100;
@@ -70,21 +70,21 @@ struct ImageCapture
         ImageCapture(stream_path, fps, _MAX_QUEUE_SIZE, loop)
     {}
 
-    bool isFile() {
+    bool isFile() const {
         return (video_stream_provider_ == StreamType::MEDIA_FILE ||
                 video_stream_provider_ == StreamType::IMG_SEQ);
     }
 
     // wrap get, set, isOpened, grab, retrieve, read and >> for VideoCapture
-    double get(int propId) {
+    double get(int propId) const {
         return cap_.get(propId);
     }
 
     bool set(int propId, double value) {
-        return cap_.set(propId, value)
+        return cap_.set(propId, value);
     }
 
-    bool isOpened() {
+    bool isOpened() const {
         return cap_.isOpened();
     }
 
@@ -158,6 +158,6 @@ struct ImageCapture
             return cap_.open(stream_path_);
         }
 };
-}  // namespace video_stream
+}  // namespace video_stream_opencv
 
 #endif  // ifndef _VIDEO_STREAM_CAPTURE_IMAGE_CAPTURE_HPP_

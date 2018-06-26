@@ -10,7 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
 )
 
-find_package(Boost REQUIRED COMPONENTS thread smart_ptr)
+find_package(Boost REQUIRED COMPONENTS thread)
 find_package(OpenCV REQUIRED)
 
 catkin_package(
@@ -33,13 +33,13 @@ set(INCLUDE_LIBS
   ${Boost_LIBRARIES}
 )
 
-if(0)
+if(1)
 add_executable(video_stream src/video_stream.cpp)
 target_link_libraries(video_stream ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 install(TARGETS video_stream
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-endif(0)
+endif(1)
 
 add_executable(main src/main.cpp)
 target_link_libraries(main ${INCLUDE_LIBS})
