@@ -47,9 +47,11 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image_msg(const sensor_msgs
     return cam_info_msg;
 }
 
-void capture_frames(ImageCapture& cap) {
+void capture_frames(ImageCapture& cap, unsigned int max_error_count = 0) {
     ros::Rate camera_fps_rate(cap.camera_fps);
     cv::Mat frame;
+
+    unsigned int error_counter = 0;
 
     // Read frames as fast as possible
     while (ros::ok()) {
@@ -59,6 +61,14 @@ void capture_frames(ImageCapture& cap) {
         }
         if(!frame.empty()) {
             cap.push(frame.clone());
+            error_counter = 0;
+        }
+        else if (max_error_count) {
+            error_counter++;
+            if (error_counter > max_error_count) {
+                ros::shutdown();
+                break;
+            }
         }
     }
 }
@@ -111,15 +121,11 @@ void consume_frames(const ros::NodeHandle &nh,
 
     ros::Rate r(fps);
     cv::Mat frame;
-    while (ros::ok()) {
+    while (nh.ok()) {
         ros::spinOnce();
         r.sleep();
 
-        if (cap.empty()) {
-            continue;
-        }
-
-        cap.pull(frame);
+        cap.try_pop(frame);
         // Check if grabbed frame is actually filled with some content
         // If so, is anyone listening?
         if (frame.empty() ||

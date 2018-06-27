@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
 )
 
-find_package(Boost REQUIRED COMPONENTS thread)
 find_package(OpenCV REQUIRED)
 
 catkin_package(
@@ -20,10 +19,12 @@ catkin_package(
                  rospy sensor_msgs
 )
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+
 include_directories(SYSTEM
   ${catkin_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 include_directories(
   include
@@ -31,7 +32,6 @@ include_directories(
 set(INCLUDE_LIBS
   ${catkin_LIBRARIES}
   ${OpenCV_LIBRARIES}
-  ${Boost_LIBRARIES}
 )
 
 add_executable(video_stream src/video_stream.cpp)

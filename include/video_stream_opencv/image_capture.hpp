@@ -3,9 +3,10 @@
 
 #include <algorithm>
 #include <fstream>
+#include <mutex>
+#include <queue>
 #include <string>
-
-#include <boost/thread/sync_queue.hpp>
+#include <thread>
 
 #include <opencv2/core.hpp>
 #include <opencv2/videoio.hpp>
@@ -21,7 +22,7 @@ struct ImageCapture
 {
     const double camera_fps = _CAPTURE_FPS;
 
-    ImageCapture(const std::string &stream_path, double fps,
+    ImageCapture(const std::string stream_path, double fps,
                  unsigned int queue_size, bool loop_file = _DEFAULT_LOOP):
         camera_fps(fps),
         max_queue_size_(queue_size),
@@ -89,14 +90,13 @@ struct ImageCapture
     }
 
     bool grab() {
-        bool ret = cap_.grab();
-        if (ret == false && loop_ == true)
-        {
-            // nothing has changed wrt StreamType
-            open_();
-            return grab();
+        bool success = cap_.grab();
+        if (success || !loop_) {
+            return success;
         }
-        return ret;
+        // nothing has changed wrt StreamType
+        open_();
+        return grab();
     }
 
     bool retrieve(cv::OutputArray &arr) const {
@@ -123,28 +123,42 @@ struct ImageCapture
         return *this;
     }
 
-    // wrap pull, push for framesQueue_
+    // wrap empty, pop, push for frames_queue_
+    bool empty() const {
+        std::lock_guard<std::mutex> lock(q_mutex_);
+        return frames_queue_.empty();
+    }
+
+    void pop(cv::Mat &img) {
+        std::lock_guard<std::mutex> lock(q_mutex_);
+        img = frames_queue_.front();
+        frames_queue_.pop();
+    }
+
     bool push(const cv::Mat &img) {
+        std::lock_guard<std::mutex> lock(q_mutex_);
         bool full = false;
-        if (framesQueue_.size() >= max_queue_size_) {
+        if (frames_queue_.size() >= max_queue_size_) {
             full = true;
-            cv::Mat temp;
-            framesQueue_.pull(temp);
+            frames_queue_.pop();
         }
-        framesQueue_.push(img);
+        frames_queue_.push(img);
         return full;
     }
 
-    void pull(cv::Mat &img) {
-        framesQueue_.pull(img);
-    }
-
-    bool empty() const {
-        return framesQueue_.empty();
+    void try_pop(cv::Mat &img) {
+        std::lock_guard<std::mutex> lock(q_mutex_);
+        if (frames_queue_.empty()) {
+            img.release();
+            return;
+        }
+        img = frames_queue_.front();
+        frames_queue_.pop();
     }
 
     private:
-        mutable boost::sync_queue<cv::Mat> framesQueue_;
+        mutable std::mutex q_mutex_;
+        mutable std::queue<cv::Mat> frames_queue_;
         mutable cv::VideoCapture cap_;
 
         const unsigned int max_queue_size_ = _MAX_QUEUE_SIZE;

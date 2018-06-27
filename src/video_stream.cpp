@@ -34,7 +34,6 @@
  * @author Sammy Pfeiffer
  */
 
-#include <cstdint>
 #include <functional>
 #include <thread>
 #include <tuple>
@@ -59,6 +58,9 @@ using namespace video_stream_opencv;
   *     * camera_fps: double, defaults to 30
   *     * flip_horizontal: bool, defaults to false, image is flipped if true
   *     * flip_vertical: bool, defaults to false, image is flipped if true
+  *     * loop: bool, defaults to true, reopens video_stream_provider if true
+  *     * max_error: unsigned int, defaults to 0, max number of continuous
+  *                  errors tolerated before quitting. 0 is 
   *     * buffer_queue_size: unsigned int, defaults to 100, used to maintain
   *                          a buffer for streaming data
   *     * fps: double, defaults to 240, throttles the output
@@ -110,6 +112,14 @@ int main(int argc, char** argv)
 
     GET_PARAM(_nh, bool, flip_vertical, false, "Flip vertically? : ");
 
+    GET_PARAM(_nh, bool, loop, true, "Reopen stream on failure: ");
+
+    GET_PARAM(_nh, int, max_error, 0, "Maximum allowed errors (0 for infinity): ");
+    if (max_error < 0) {
+        ROS_ERROR_STREAM("Error threshold can't be negative, setting to default value");
+        max_error = 0;
+    }
+
     GET_PARAM(_nh, int, buffer_queue_size, 100, "Buffer size for captured frames: ");
     if (buffer_queue_size < 0) {
         ROS_ERROR_STREAM("Buffer size can't be negative, setting to default value");
@@ -136,7 +146,8 @@ int main(int argc, char** argv)
     int flip_value;
     std::tie(flip_image, flip_value) = get_flip_value(flip_horizontal, flip_vertical);
 
-    ImageCapture cap{video_stream_provider, camera_fps, uint16_t(buffer_queue_size), true};
+    ImageCapture cap{video_stream_provider, camera_fps,
+                     static_cast<unsigned int>(buffer_queue_size), loop};
     if(!cap.isOpened()) {
         ROS_ERROR_STREAM("Could not open the stream.");
         return -1;
@@ -159,7 +170,8 @@ int main(int argc, char** argv)
     }
 
     ROS_INFO_STREAM("Opened the stream, starting to publish.");
-    std::thread cap_thread{capture_frames, std::ref(cap)};
+    std::thread cap_thread{capture_frames, std::ref(cap), static_cast<unsigned int>(max_error)};
+
     consume_frames(cap, fps, camera_name, frame_id, camera_info_url, flip_image, flip_value);
     cap_thread.join();
     return 0;
