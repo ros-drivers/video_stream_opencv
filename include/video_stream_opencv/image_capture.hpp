@@ -5,6 +5,7 @@
 #include <fstream>
 #include <mutex>
 #include <queue>
+#include <shared_mutex>
 #include <string>
 #include <thread>
 
@@ -20,15 +21,83 @@ const bool _DEFAULT_LOOP = false;
 
 struct ImageCapture
 {
-    const double camera_fps = _CAPTURE_FPS;
+  private:
+    mutable std::mutex q_mutex_;
+    mutable std::recursive_mutex cap_mutex_;
+    mutable std::queue<cv::Mat> frames_queue_;
+    mutable cv::VideoCapture cap_;
 
-    ImageCapture(const std::string stream_path, double fps,
-                 unsigned int queue_size, bool loop_file = _DEFAULT_LOOP):
-        camera_fps(fps),
-        max_queue_size_(queue_size),
-        loop_(loop_file),
-        stream_path_(stream_path) {
+    unsigned int max_queue_size_;
+    bool loop_;
+    std::string stream_path_;
+
+    enum class StreamType { UNKNOWN, DEV_VIDEO, HTTP, RTSP, MEDIA_FILE, IMG_SEQ };
+    StreamType video_stream_provider_;
+
+    bool open_() {
+        if (video_stream_provider_ == StreamType::DEV_VIDEO) {
+            return cap_.open(atoi(stream_path_.c_str()));
+        }
+        return cap_.open(stream_path_);
+    }
+  public:
+    double camera_fps;
+
+    ImageCapture(std::string stream_path,
+                 double fps = _CAPTURE_FPS,
+                 unsigned int queue_size = _MAX_QUEUE_SIZE,
+                 bool loop_file = _DEFAULT_LOOP) {
+            reset(stream_path, fps, queue_size, loop_file);
+        }
+
+    ImageCapture(const std::string &stream_path, double fps = _CAPTURE_FPS):
+        ImageCapture(stream_path, fps, _MAX_QUEUE_SIZE, _DEFAULT_LOOP)
+    {}
+
+    ImageCapture(const std::string &stream_path, unsigned int queue_size):
+        ImageCapture(stream_path, _CAPTURE_FPS, queue_size, _DEFAULT_LOOP)
+    {}
+
+    ImageCapture(const std::string &stream_path, bool loop):
+        ImageCapture(stream_path, _CAPTURE_FPS, _MAX_QUEUE_SIZE, loop)
+    {}
+
+    ImageCapture(const std::string &stream_path, double fps, bool loop):
+        ImageCapture(stream_path, fps, _MAX_QUEUE_SIZE, loop)
+    {}
+
+    ~ImageCapture() {
+        dtor_mutex.lock();
+        q_mutex_.lock();
+        cap_mutex_.lock();
+    }
+
+    void reset(std::string stream_path,
+               double fps = _CAPTURE_FPS,
+               unsigned int queue_size = _MAX_QUEUE_SIZE,
+               bool loop_file = _DEFAULT_LOOP) {
+        std::lock_guard q_lock(q_mutex_);
+        std::lock_guard cap_lock(cap_mutex_);
+        camera_fps = fps;
+        max_queue_size_ = queue_size;
+        loop_ = loop_file;
+        stream_path_ = stream_path;
         video_stream_provider_ = StreamType::UNKNOWN;
+        frames_queue_ = {};
+
+        // hack to remove spurious quotation marks
+        if (stream_path.size() > 2) {
+            switch (stream_path[0]) {
+                case '\'':
+                    [[fallthrough]];
+                case '"':
+                        if (stream_path.front() == stream_path.back()) {
+                            // remove the front and back
+                            stream_path = stream_path.substr(1, stream_path.size() -2);
+                        }
+            }
+        }
+
         // same size limit used internally in cv::VideoCapture
         if (stream_path.size() < 4) {
             video_stream_provider_ = StreamType::DEV_VIDEO;
@@ -55,41 +124,40 @@ struct ImageCapture
         open_();
     }
 
-    ImageCapture(const std::string &stream_path, double fps = _CAPTURE_FPS):
-        ImageCapture(stream_path, fps, _MAX_QUEUE_SIZE, _DEFAULT_LOOP)
-    {}
+    void reset() {
+        // Why though?
+        return reset(stream_path_, camera_fps, max_queue_size_, loop_);
+    }
 
-    ImageCapture(const std::string &stream_path, unsigned int queue_size):
-        ImageCapture(stream_path, _CAPTURE_FPS, queue_size, _DEFAULT_LOOP)
-    {}
-
-    ImageCapture(const std::string &stream_path, bool loop):
-        ImageCapture(stream_path, _CAPTURE_FPS, _MAX_QUEUE_SIZE, loop)
-    {}
-
-    ImageCapture(const std::string &stream_path, double fps, bool loop):
-        ImageCapture(stream_path, fps, _MAX_QUEUE_SIZE, loop)
-    {}
+    void close() {
+        std::lock_guard cap_lock(cap_mutex_);
+        cap_.release();
+    }
 
     bool isFile() const {
+        std::lock_guard cap_lock(cap_mutex_);
         return (video_stream_provider_ == StreamType::MEDIA_FILE ||
                 video_stream_provider_ == StreamType::IMG_SEQ);
     }
 
     // wrap get, set, isOpened, grab, retrieve, read and >> for VideoCapture
     double get(int propId) const {
+        std::lock_guard cap_lock(cap_mutex_);
         return cap_.get(propId);
     }
 
     bool set(int propId, double value) {
+        std::lock_guard cap_lock(cap_mutex_);
         return cap_.set(propId, value);
     }
 
     bool isOpened() const {
+        std::lock_guard cap_lock(cap_mutex_);
         return cap_.isOpened();
     }
 
     bool grab() {
+        std::lock_guard cap_lock(cap_mutex_);
         bool success = cap_.grab();
         if (success || !loop_) {
             return success;
@@ -100,6 +168,7 @@ struct ImageCapture
     }
 
     bool retrieve(cv::OutputArray &arr) const {
+        std::lock_guard cap_lock(cap_mutex_);
         return cap_.retrieve(arr);
     }
 
@@ -123,20 +192,25 @@ struct ImageCapture
         return *this;
     }
 
-    // wrap empty, pop, push for frames_queue_
+    // wrap clear, empty, pop, push for frames_queue_
+    void clear() {
+        std::lock_guard q_lock(q_mutex_);
+        frames_queue_ = {};
+    }
+
     bool empty() const {
-        std::lock_guard<std::mutex> lock(q_mutex_);
+        std::lock_guard q_lock(q_mutex_);
         return frames_queue_.empty();
     }
 
     void pop(cv::Mat &img) {
-        std::lock_guard<std::mutex> lock(q_mutex_);
+        std::lock_guard q_lock(q_mutex_);
         img = frames_queue_.front();
         frames_queue_.pop();
     }
 
     bool push(const cv::Mat &img) {
-        std::lock_guard<std::mutex> lock(q_mutex_);
+        std::lock_guard q_lock(q_mutex_);
         bool full = false;
         if (frames_queue_.size() >= max_queue_size_) {
             full = true;
@@ -147,7 +221,7 @@ struct ImageCapture
     }
 
     void try_pop(cv::Mat &img) {
-        std::lock_guard<std::mutex> lock(q_mutex_);
+        std::lock_guard q_lock(q_mutex_);
         if (frames_queue_.empty()) {
             img.release();
             return;
@@ -156,24 +230,11 @@ struct ImageCapture
         frames_queue_.pop();
     }
 
-    private:
-        mutable std::mutex q_mutex_;
-        mutable std::queue<cv::Mat> frames_queue_;
-        mutable cv::VideoCapture cap_;
+    std::string get_video_stream_provider() const {
+        return stream_path_;
+    }
 
-        const unsigned int max_queue_size_ = _MAX_QUEUE_SIZE;
-        const bool loop_ = _DEFAULT_LOOP;
-        const std::string stream_path_;
-
-        enum class StreamType { UNKNOWN, DEV_VIDEO, HTTP, RTSP, MEDIA_FILE, IMG_SEQ };
-        StreamType video_stream_provider_;
-
-        bool open_() {
-            if (video_stream_provider_ == StreamType::DEV_VIDEO) {
-                return cap_.open(atoi(stream_path_.c_str()));
-            }
-            return cap_.open(stream_path_);
-        }
+    mutable std::shared_mutex dtor_mutex;
 };
 }  // namespace video_stream_opencv
 

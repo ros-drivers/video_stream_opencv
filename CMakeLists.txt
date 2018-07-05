@@ -19,7 +19,8 @@ catkin_package(
                  rospy sensor_msgs
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g")
 
 include_directories(SYSTEM
   ${catkin_INCLUDE_DIRS}
@@ -34,10 +35,10 @@ set(INCLUDE_LIBS
   ${OpenCV_LIBRARIES}
 )
 
-add_executable(video_stream src/video_stream.cpp)
-target_link_libraries(video_stream ${INCLUDE_LIBS})
+add_executable(video_stream_node src/node.cpp)
+target_link_libraries(video_stream_node ${INCLUDE_LIBS})
 
-install(TARGETS video_stream
+install(TARGETS video_stream_node
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(PROGRAMS scripts/test_video_resource.py

@@ -3,5 +3,6 @@
 
 #include <video_stream_opencv/image_capture.hpp>
 #include <video_stream_opencv/utility.hpp>
+#include <video_stream_opencv/video_streamer.hpp>
 
 #endif  // ifndef _VIDEO_STREAM_OPENCV_VIDEO_STREAM_OPENCV_HPP_

@@ -1,6 +1,7 @@
 #ifndef _VIDEO_STREAM_OPENCV_UTILITY_HPP_
 #define _VIDEO_STREAM_OPENCV_UTILITY_HPP_
 
+#include <shared_mutex>
 #include <string>
 #include <tuple>
 
@@ -47,23 +48,46 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image_msg(const sensor_msgs
     return cam_info_msg;
 }
 
-void capture_frames(ImageCapture& cap, unsigned int max_error_count = 0) {
-    ros::Rate camera_fps_rate(cap.camera_fps);
+template <class ImageCapturePtr>
+void capture_frames(ImageCapturePtr const &cap, unsigned int max_error_count = 0) {
+    ImageCapture *tmp = &*cap;
+    ros::Rate camera_fps_rate(cap->camera_fps);
     cv::Mat frame;
 
     unsigned int error_counter = 0;
 
     // Read frames as fast as possible
     while (ros::ok()) {
-        cap.read(frame);
-        if (cap.isFile()) {
+        // check if the pointer has been changed
+        if (cap && tmp != &*cap) {
+            ROS_WARN("Capture object changed");
+            // get the pointee
+            tmp = &*cap;
+            camera_fps_rate = ros::Rate(tmp->camera_fps);
             camera_fps_rate.sleep();
         }
-        if(!frame.empty()) {
-            cap.push(frame.clone());
-            error_counter = 0;
+        if (tmp == nullptr) {
+            camera_fps_rate.sleep();
         }
-        else if (max_error_count) {
+        else {
+            std::shared_lock dtor_lock(tmp->dtor_mutex, std::defer_lock);
+            if(!dtor_lock.try_lock()) {
+                do {
+                    camera_fps_rate.sleep();
+                } while (tmp == &*cap);
+                continue;
+            }
+            tmp->read(frame);
+            if (tmp->isFile()) {
+                camera_fps_rate.sleep();
+            }
+            if(!frame.empty()) {
+                tmp->push(frame.clone());
+                error_counter = 0;
+                continue;
+            }
+        }
+        if (max_error_count) {
             error_counter++;
             if (error_counter > max_error_count) {
                 ros::shutdown();
@@ -71,6 +95,11 @@ void capture_frames(ImageCapture& cap, unsigned int max_error_count = 0) {
             }
         }
     }
+}
+void capture_frames(ImageCapture &cap, unsigned int max_error_count = 0) {
+    ros::NodeHandle nh(ros::this_node::getName());
+    ImageCapture * const cap_ptr = &cap;
+    return capture_frames(cap_ptr, max_error_count);
 }
 
 /**
@@ -98,8 +127,10 @@ std::tuple<bool, int> get_flip_value(bool flip_horizontal, bool flip_vertical) {
     return std::make_tuple(flip_image, flip_value);
 }
 
+template <class ImageCapturePtr>
 void consume_frames(const ros::NodeHandle &nh,
-                    ImageCapture &cap,
+                    // reference to a pointer allows us to keep pace with changes in the ptr
+                    ImageCapturePtr const &cap,
                     double fps = 240.0,
                     std::string topic = "camera",
                     const std::string frame_id = "camera",
@@ -119,13 +150,39 @@ void consume_frames(const ros::NodeHandle &nh,
     cam_info_msg = cam_info_manager.getCameraInfo();
     cam_info_msg.header = header;
 
+    fps=30;
+    if (!fps) {
+        ROS_ERROR("[consume]: FPS has been set to 0");
+        ros::shutdown();
+    }
     ros::Rate r(fps);
     cv::Mat frame;
+
+    ImageCapture *tmp = &*cap;
     while (nh.ok()) {
         ros::spinOnce();
         r.sleep();
 
-        cap.try_pop(frame);
+        // get the pointee incase the pointer changed
+        if (cap && tmp != &*cap) {
+            ROS_WARN("Object to consume from changed");
+            tmp = &*cap;
+            continue;
+        }
+        if (tmp == nullptr) {
+            continue;
+        }
+
+        {
+            std::shared_lock dtor_lock(tmp->dtor_mutex, std::defer_lock);
+            if(!dtor_lock.try_lock()) {
+                do {
+                    r.sleep();
+                } while (tmp == &*cap);
+                continue;
+            }
+            tmp->try_pop(frame);
+        }
         // Check if grabbed frame is actually filled with some content
         // If so, is anyone listening?
         if (frame.empty() ||
@@ -159,7 +216,8 @@ void consume_frames(ImageCapture &cap,
                     const bool flip_image = false,
                     const int flip_value = 0) {
     ros::NodeHandle nh(ros::this_node::getName());
-    consume_frames(nh, cap, fps, topic, frame_id, camera_info_url, flip_image, flip_value);
+    ImageCapture * const cap_ptr = &cap;
+    consume_frames(nh, cap_ptr, fps, topic, frame_id, camera_info_url, flip_image, flip_value);
 }
 }  // namespace video_stream_opencv
 
