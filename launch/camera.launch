@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
   	<arg name="camera_name" default="camera" />
   	<!-- video_stream_provider can be a number as a video device or a url of a video stream -->

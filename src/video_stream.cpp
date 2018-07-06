@@ -42,8 +42,15 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sstream>
 #include <boost/assign/list_of.hpp>
+//#include <opencv2/core/utility.hpp>
+//#include <stdio.h>
+#include <curses.h>
+
+//#define ROS_INFO_STREAM(x) ROS_INFO_STREAM(x << "\r")
 
 // Based on the ros tutorial on transforming opencv images to Image messages
+
+std::string ncurses_cr("\r");
 
 sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr img){
     sensor_msgs::CameraInfo cam_info_msg;
@@ -51,8 +58,8 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr
     // Fill image size
     cam_info_msg.height = img->height;
     cam_info_msg.width = img->width;
-    ROS_INFO_STREAM("The image width is: " << img->width);
-    ROS_INFO_STREAM("The image height is: " << img->height);
+    ROS_INFO_STREAM("The image width is: " << img->width << ncurses_cr);
+    ROS_INFO_STREAM("The image height is: " << img->height << ncurses_cr);
     // Add the most common distortion model as sensor_msgs/CameraInfo says
     cam_info_msg.distortion_model = "plumb_bob";
     // Don't let distorsion matrix be empty
@@ -86,15 +93,15 @@ int main(int argc, char** argv)
     std::string video_stream_provider;
     cv::VideoCapture cap;
     if (_nh.getParam("video_stream_provider", video_stream_provider)){
-        ROS_INFO_STREAM("Resource video_stream_provider: " << video_stream_provider);
+        ROS_INFO_STREAM("Resource video_stream_provider: " << video_stream_provider << ncurses_cr);
         // If we are given a string of 4 chars or less (I don't think we'll have more than 100 video devices connected)
         // treat is as a number and act accordingly so we open up the videoNUMBER device
         if (video_stream_provider.size() < 4){
-            ROS_INFO_STREAM("Getting video from provider: /dev/video" << video_stream_provider);
+            ROS_INFO_STREAM("Getting video from provider: /dev/video" << video_stream_provider << ncurses_cr);
             cap.open(atoi(video_stream_provider.c_str()));
         }
         else{
-            ROS_INFO_STREAM("Getting video from provider: " << video_stream_provider);
+            ROS_INFO_STREAM("Getting video from provider: " << video_stream_provider << ncurses_cr);
             cap.open(video_stream_provider);
         }
     }
@@ -105,35 +112,35 @@ int main(int argc, char** argv)
 
     std::string camera_name;
     _nh.param("camera_name", camera_name, std::string("camera"));
-    ROS_INFO_STREAM("Camera name: " << camera_name);
+    ROS_INFO_STREAM("Camera name: " << camera_name << ncurses_cr);
 
     int fps;
     _nh.param("fps", fps, 240);
-    ROS_INFO_STREAM("Throttling to fps: " << fps);
+    ROS_INFO_STREAM("Throttling to fps: " << fps << ncurses_cr);
 
     std::string frame_id;
     _nh.param("frame_id", frame_id, std::string("camera"));
-    ROS_INFO_STREAM("Publishing with frame_id: " << frame_id);
+    ROS_INFO_STREAM("Publishing with frame_id: " << frame_id << ncurses_cr);
 
     std::string camera_info_url;
     _nh.param("camera_info_url", camera_info_url, std::string(""));
-    ROS_INFO_STREAM("Provided camera_info_url: '" << camera_info_url << "'");
+    ROS_INFO_STREAM("Provided camera_info_url: '" << camera_info_url << "'" << ncurses_cr);
 
     bool flip_horizontal;
     _nh.param("flip_horizontal", flip_horizontal, false);
-    ROS_INFO_STREAM("Flip horizontal image is: " << ((flip_horizontal)?"true":"false"));
+    ROS_INFO_STREAM("Flip horizontal image is: " << ((flip_horizontal)?"true":"false") << ncurses_cr);
 
     bool flip_vertical;
     _nh.param("flip_vertical", flip_vertical, false);
-    ROS_INFO_STREAM("Flip vertical image is: " << ((flip_vertical)?"true":"false"));
+    ROS_INFO_STREAM("Flip vertical image is: " << ((flip_vertical)?"true":"false") << ncurses_cr);
 
     int width_target;
     int height_target;
     _nh.param("width", width_target, 0);
     _nh.param("height", height_target, 0);
     if (width_target != 0 && height_target != 0){
-        ROS_INFO_STREAM("Forced image width is: " << width_target);
-        ROS_INFO_STREAM("Forced image height is: " << height_target);
+        ROS_INFO_STREAM("Forced image width is: " << width_target << ncurses_cr);
+        ROS_INFO_STREAM("Forced image height is: " << height_target << ncurses_cr);
     }
 
     // From http://docs.opencv.org/modules/core/doc/operations_on_arrays.html#void flip(InputArray src, OutputArray dst, int flipCode)
@@ -150,7 +157,7 @@ int main(int argc, char** argv)
         flip_image = false;
 
     if(!cap.isOpened()){
-        ROS_ERROR_STREAM("Could not open the stream.");
+        ROS_ERROR_STREAM("Could not open the stream." << ncurses_cr);
         return -1;
     }
     if (width_target != 0 && height_target != 0){
@@ -159,7 +166,7 @@ int main(int argc, char** argv)
     }
 
 
-    ROS_INFO_STREAM("Opened the stream, starting to publish.");
+    ROS_INFO_STREAM("Opened the stream, starting to publish." << ncurses_cr);
 
     cv::Mat frame;
     sensor_msgs::ImagePtr msg;
@@ -171,8 +178,39 @@ int main(int argc, char** argv)
     cam_info_msg = cam_info_manager.getCameraInfo();
 
     ros::Rate r(fps);
-    while (nh.ok()) {
-        cap >> frame;
+    bool paused = false;
+
+    initscr();
+    noecho();
+    //cbreak();       // don't interrupt for user input
+    timeout(1);       // wait	
+
+    while (nh.ok())
+    {
+        //ROS_INFO_STREAM("." << ncurses_cr);
+        //char c = (char)cv::waitKey(10000);
+	//char c = (char)std::cin.get();
+        char c = getch();
+        //ROS_INFO_STREAM("c: -" << c << "-" << std::endl << ncurses_cr);
+        if (c == 27)
+            break;
+        switch (c)
+        {
+            case 'p':
+              paused = !paused;
+              if (paused)
+                 ROS_INFO_STREAM("Pause" << ncurses_cr);
+              else
+                 ROS_INFO_STREAM("Resuming..." << ncurses_cr);
+            break;
+
+            default:
+            ;
+        }
+
+        if (!paused)
+            cap >> frame;
+
         if (pub.getNumSubscribers() > 0){
             // Check if grabbed frame is actually full with some content
             if(!frame.empty()) {
@@ -182,7 +220,7 @@ int main(int argc, char** argv)
                 msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
                 // Create a default camera info if we didn't get a stored one on initialization
                 if (cam_info_msg.distortion_model == ""){
-                    ROS_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
+                    ROS_WARN_STREAM("No calibration file given, publishing a reasonable default camera info." << ncurses_cr);
                     cam_info_msg = get_default_camera_info_from_image(msg);
                     cam_info_manager.setCameraInfo(cam_info_msg);
                 }

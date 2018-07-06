@@ -11,7 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 
-find_package(OpenCV)
+find_package(OpenCV REQUIRED)
+find_package(Curses REQUIRED)
 
 catkin_package()
 
@@ -20,8 +21,10 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
+message("CURSES_LIBRARIES: ${CURSES_LIBRARIES}")
+
 add_executable(video_stream src/video_stream.cpp)
-target_link_libraries(video_stream ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(video_stream ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${CURSES_LIBRARIES})
 
 install(TARGETS video_stream
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
