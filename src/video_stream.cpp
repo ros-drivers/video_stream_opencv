@@ -41,16 +41,21 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sstream>
+#include <fstream>
 #include <boost/assign/list_of.hpp>
-//#include <opencv2/core/utility.hpp>
-//#include <stdio.h>
+#include <boost/thread/thread.hpp>
+#include <boost/thread/sync_queue.hpp>
 #include <curses.h>
 
-//#define ROS_INFO_STREAM(x) ROS_INFO_STREAM(x << "\r")
-
-// Based on the ros tutorial on transforming opencv images to Image messages
+boost::sync_queue<cv::Mat> framesQueue;
+cv::VideoCapture cap;
+std::string video_stream_provider_type;
+double set_camera_fps;
+int max_queue_size;
 
 std::string ncurses_cr("\r");
+
+// Based on the ros tutorial on transforming opencv images to Image messages
 
 sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr img){
     sensor_msgs::CameraInfo cam_info_msg;
@@ -80,9 +85,41 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr
 }
 
 
+void do_capture(ros::NodeHandle &nh) {
+    cv::Mat frame;
+    cv::Mat _drop_frame;
+
+    ros::Rate camera_fps_rate(set_camera_fps);
+
+    // Read frames as fast as possible
+    while (nh.ok()) {
+        cap >> frame;
+	if (video_stream_provider_type == "videofile")
+	{
+         camera_fps_rate.sleep();
+	}
+        if(!frame.empty()) {
+            // accumulate only until max_queue_size
+            if (framesQueue.size() < max_queue_size) {
+                framesQueue.push(frame.clone());
+            }
+            // once reached, drop the oldest frame
+            else {
+                framesQueue.pull(_drop_frame);
+                framesQueue.push(frame.clone());
+            }
+        }
+    }
+}
+
 
 int main(int argc, char** argv)
 {
+    initscr();
+    noecho();
+    timeout(1);		// Timeout for getch()
+    boost::this_thread::sleep_for(boost::chrono::duration<double, boost::milli>(10000));
+
     ros::init(argc, argv, "image_publisher");
     ros::NodeHandle nh;
     ros::NodeHandle _nh("~"); // to get the private params
@@ -91,17 +128,34 @@ int main(int argc, char** argv)
 
     // provider can be an url (e.g.: rtsp://10.0.0.1:554) or a number of device, (e.g.: 0 would be /dev/video0)
     std::string video_stream_provider;
-    cv::VideoCapture cap;
     if (_nh.getParam("video_stream_provider", video_stream_provider)){
         ROS_INFO_STREAM("Resource video_stream_provider: " << video_stream_provider << ncurses_cr);
         // If we are given a string of 4 chars or less (I don't think we'll have more than 100 video devices connected)
         // treat is as a number and act accordingly so we open up the videoNUMBER device
         if (video_stream_provider.size() < 4){
             ROS_INFO_STREAM("Getting video from provider: /dev/video" << video_stream_provider << ncurses_cr);
+            video_stream_provider_type = "videodevice";
             cap.open(atoi(video_stream_provider.c_str()));
         }
         else{
             ROS_INFO_STREAM("Getting video from provider: " << video_stream_provider << ncurses_cr);
+            if (video_stream_provider.find("http://") != std::string::npos || 
+                video_stream_provider.find("https://") != std::string::npos){
+                video_stream_provider_type = "http_stream";
+            }
+            else if(video_stream_provider.find("rtsp://") != std::string::npos){
+                video_stream_provider_type = "rtsp_stream";
+            }
+            else {
+                // Check if file exists to know if it's a videofile
+                std::ifstream ifs;
+                ifs.open(video_stream_provider.c_str(), std::ifstream::in);
+                if (ifs.good()){
+                    video_stream_provider_type = "videofile";
+                }
+                else
+                    video_stream_provider_type = "unknown";
+            }
             cap.open(video_stream_provider);
         }
     }
@@ -110,13 +164,38 @@ int main(int argc, char** argv)
         return -1;
     }
 
+    ROS_INFO_STREAM("Video stream provider type detected: " << video_stream_provider_type << ncurses_cr);
+
     std::string camera_name;
     _nh.param("camera_name", camera_name, std::string("camera"));
     ROS_INFO_STREAM("Camera name: " << camera_name << ncurses_cr);
+    
+    _nh.param("set_camera_fps", set_camera_fps, 30.0);
+    ROS_INFO_STREAM("Setting camera FPS to: " << set_camera_fps << ncurses_cr);
+    cap.set(CV_CAP_PROP_FPS, set_camera_fps);
+    
+    double reported_camera_fps;
+    // OpenCV 2.4 returns -1 (instead of a 0 as the spec says) and prompts an error
+    // HIGHGUI ERROR: V4L2: Unable to get property <unknown property string>(5) - Invalid argument
+    reported_camera_fps = cap.get(CV_CAP_PROP_FPS);
+    if (reported_camera_fps > 0.0)
+        ROS_INFO_STREAM("Camera reports FPS: " << reported_camera_fps << ncurses_cr);
+    else
+        ROS_INFO_STREAM("Backend can't provide camera FPS information" << ncurses_cr);
+    
+    int buffer_queue_size;
+    _nh.param("buffer_queue_size", buffer_queue_size, 100);
+    ROS_INFO_STREAM("Setting buffer size for capturing frames to: " << buffer_queue_size << ncurses_cr);
+    max_queue_size = buffer_queue_size;
 
-    int fps;
-    _nh.param("fps", fps, 240);
+    double fps;
+    _nh.param("fps", fps, 240.0);
     ROS_INFO_STREAM("Throttling to fps: " << fps << ncurses_cr);
+    
+    if (video_stream_provider.size() < 4 && fps > set_camera_fps)
+        ROS_WARN_STREAM("Asked to publish at 'fps' (" << fps
+        << ") which is higher than the 'set_camera_fps' (" << set_camera_fps <<
+        "), we can't publish faster than the camera provides images." << ncurses_cr);
 
     std::string frame_id;
     _nh.param("frame_id", frame_id, std::string("camera"));
@@ -148,11 +227,11 @@ int main(int argc, char** argv)
     bool flip_image = true;
     int flip_value;
     if (flip_horizontal && flip_vertical)
-        flip_value = 0; // flip both, horizontal and vertical
+        flip_value = -1; // flip both, horizontal and vertical
     else if (flip_horizontal)
         flip_value = 1;
     else if (flip_vertical)
-        flip_value = -1;
+        flip_value = 0;
     else
         flip_image = false;
 
@@ -165,10 +244,8 @@ int main(int argc, char** argv)
         cap.set(CV_CAP_PROP_FRAME_HEIGHT, height_target);
     }
 
-
-    ROS_INFO_STREAM("Opened the stream, starting to publish." << ncurses_cr);
-
     cv::Mat frame;
+    bool first_run = true;
     sensor_msgs::ImagePtr msg;
     sensor_msgs::CameraInfo cam_info_msg;
     std_msgs::Header header;
@@ -176,24 +253,20 @@ int main(int argc, char** argv)
     camera_info_manager::CameraInfoManager cam_info_manager(nh, camera_name, camera_info_url);
     // Get the saved camera info if any
     cam_info_msg = cam_info_manager.getCameraInfo();
+    cam_info_msg.header = header;
+    
+    ROS_INFO_STREAM("Opened the stream, starting to publish." << ncurses_cr);
+    boost::thread cap_thread(do_capture, nh);
 
     ros::Rate r(fps);
     bool paused = false;
 
-    initscr();
-    noecho();
-    //cbreak();       // don't interrupt for user input
-    timeout(1);       // wait	
-
     while (nh.ok())
     {
-        //ROS_INFO_STREAM("." << ncurses_cr);
-        //char c = (char)cv::waitKey(10000);
-	//char c = (char)std::cin.get();
         char c = getch();
-        //ROS_INFO_STREAM("c: -" << c << "-" << std::endl << ncurses_cr);
         if (c == 27)
             break;
+
         switch (c)
         {
             case 'p':
@@ -203,16 +276,22 @@ int main(int argc, char** argv)
               else
                  ROS_INFO_STREAM("Resuming..." << ncurses_cr);
             break;
+            case '?':
+            break;
 
             default:
+                 ROS_INFO_STREAM("Key pressed: " << c << ncurses_cr);
             ;
         }
 
-        if (!paused)
-            cap >> frame;
+        if (paused)
+            continue;
+
+	if (!framesQueue.empty())
+		framesQueue.pull(frame);
 
         if (pub.getNumSubscribers() > 0){
-            // Check if grabbed frame is actually full with some content
+            // Check if grabbed frame is actually filled with some content
             if(!frame.empty()) {
                 // Flip the image if necessary
                 if (flip_image)
@@ -224,6 +303,20 @@ int main(int argc, char** argv)
                     cam_info_msg = get_default_camera_info_from_image(msg);
                     cam_info_manager.setCameraInfo(cam_info_msg);
                 }
+
+                if (first_run) {
+                    first_run = false;
+                    uint64_t memusage = 1.0 * max_queue_size * (uint64_t(frame.dataend) - uint64_t(frame.datastart)) / 1048576;
+                    // MB of RAM
+                    if (memusage > 512) {
+                       ROS_WARN_STREAM("WARNING. Queue size: " << max_queue_size << " * allocated image size: "
+                        << uint64_t(frame.dataend) - uint64_t(frame.datastart)
+                        << " may occupy up to: " << memusage << " MB of RAM");
+                       ROS_WARN_STREAM("especially on slow CPUs like on Raspberry Pi where exact timings cannot be met.");
+                       ROS_WARN_STREAM("Reduce the queue size if memory consumption becomes too high.");
+                    }
+                }
+
                 // The timestamps are in sync thanks to this publisher
                 pub.publish(*msg, cam_info_msg, ros::Time::now());
             }
@@ -232,4 +325,7 @@ int main(int argc, char** argv)
         }
         r.sleep();
     }
+    cap_thread.join();
+
+    endwin();
 }

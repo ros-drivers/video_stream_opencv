@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(video_stream_opencv)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -O0 -std=c++11")
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -9,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   camera_info_manager
   sensor_msgs
 )
-
 
 find_package(OpenCV REQUIRED)
 find_package(Curses REQUIRED)
