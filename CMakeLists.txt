@@ -24,7 +24,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -g")
 
 include_directories(SYSTEM
   ${catkin_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 include_directories(
