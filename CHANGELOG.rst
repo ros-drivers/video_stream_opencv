@@ -2,6 +2,11 @@
 Changelog for package video_stream_opencv
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Fix bug, cv::Mat needs to be cloned otherwise all entries in the queue will point to the same frame. This resulted in always returning the last received frame.
+* Contributors: Axel13fr
+
 1.1.3 (2018-07-11)
 ------------------
 * Fixing ever growing memory when using boost::sync_queue (Issue #20) by reimplementing thread safety of frames queue using std classes. boost::sync_queue is buggy (keeps on allocating memory over time).
