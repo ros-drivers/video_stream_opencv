@@ -100,12 +100,12 @@ void do_capture(ros::NodeHandle &nh) {
             std::lock_guard<std::mutex> g(q_mutex);
             // accumulate only until max_queue_size
             if (framesQueue.size() < max_queue_size) {
-                framesQueue.push(frame);
+                framesQueue.push(frame.clone());
             }
             // once reached, drop the oldest frame
             else {
                 framesQueue.pop();
-                framesQueue.push(frame);
+                framesQueue.push(frame.clone());
             }
         }
     }
