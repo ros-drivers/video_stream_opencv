@@ -45,7 +45,12 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/sync_queue.hpp>
+
+#define HAVE_NCURSES
+
+#ifdef HAVE_NCURSES
 #include <curses.h>
+#endif
 
 boost::sync_queue<cv::Mat> framesQueue;
 cv::VideoCapture cap;
@@ -115,10 +120,12 @@ void do_capture(ros::NodeHandle &nh) {
 
 int main(int argc, char** argv)
 {
+#ifdef HAVE_NCURSES
     initscr();
     noecho();
     timeout(1);		// Timeout for getch()
-    boost::this_thread::sleep_for(boost::chrono::duration<double, boost::milli>(10000));
+    boost::this_thread::sleep_for(boost::chrono::duration<double, boost::milli>(100));
+#endif
 
     ros::init(argc, argv, "image_publisher");
     ros::NodeHandle nh;
@@ -263,6 +270,7 @@ int main(int argc, char** argv)
 
     while (nh.ok())
     {
+#ifdef HAVE_NCURSES
         char c = getch();
         if (c == 27)
             break;
@@ -276,16 +284,18 @@ int main(int argc, char** argv)
               else
                  ROS_INFO_STREAM("Resuming..." << ncurses_cr);
             break;
-            case '?':
+            case -1:
+		/// Nothing pressed
             break;
 
             default:
                  ROS_INFO_STREAM("Key pressed: " << c << ncurses_cr);
-            ;
+	    break;
         }
 
         if (paused)
             continue;
+#endif
 
 	if (!framesQueue.empty())
 		framesQueue.pull(frame);
@@ -320,12 +330,13 @@ int main(int argc, char** argv)
                 // The timestamps are in sync thanks to this publisher
                 pub.publish(*msg, cam_info_msg, ros::Time::now());
             }
-
             ros::spinOnce();
         }
         r.sleep();
     }
     cap_thread.join();
 
+#ifdef HAVE_NCURSES
     endwin();
+#endif
 }
