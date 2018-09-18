@@ -23,7 +23,7 @@ topic_name   = 'mjpeg_publisher'
 stream_url   = 'http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240'
 jpeg_quality = 40
 show_gui     = False
-verbose      = True
+verbose      = False
 
 def syntax(argv):
         print("")
@@ -106,8 +106,6 @@ while True:
 
 	if jpeg_quality:
 		i = cv2.imdecode(numpy_data, cv2.IMREAD_COLOR)
-		#retval, jpeg_data = cv2.imencode('.jpg', i, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
-		#data = np.array(cv2.imencode('.jpg', i, [int(cv2.IMWRITE_JPEG_QUALITY), jpeg_quality])[1]).tostring()
 		retval, jpeg_data = cv2.imencode('.jpg', i, [cv2.IMWRITE_JPEG_QUALITY, int(jpeg_quality)])
 		if verbose:
 			print("Successful recompression: {} - orig jpeg: {} - recompressed: {}".format(retval, numpy_data.size, jpeg_data.size))
