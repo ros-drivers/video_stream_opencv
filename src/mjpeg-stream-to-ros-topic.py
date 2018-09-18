@@ -19,8 +19,28 @@ from sensor_msgs.msg import CompressedImage
 print(sys.version)
 print(sys.argv)
 
-topic_name = 'mjpeg_republisher'
-stream_url = 'http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240'
+topic_name   = 'mjpeg_publisher'
+stream_url   = 'http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240'
+jpeg_quality = 40
+show_gui     = False
+verbose      = True
+
+def syntax(argv):
+        print("")
+        print("Syntax:")
+        print("-------")
+        print("\t{} {}".format(argv[0], "{--help,-h}\t\t\t\t\t\t\t\t\t\t\t# Shows this help"))
+        print("\t{} {}".format(argv[0], "[http://host:port/mjpeg-stream.mjpg] [mjpeg_topic] [(re)compression quality 0-99] [show_gui]"))
+        print("")
+        print("Examples:")
+        print("---------")
+        print("\t{} {}".format(argv[0], "http://vivotek-0:8080/video.mjpg /vivotek_0 40"))
+        print("\t{} {}".format(argv[0], "http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240 /a_random_ip_camera 90 show_gui"))
+        print("\t{} {}".format(argv[0], "http://vivotek-0:8080/video.mjpg /vivotek_0 0\t\t\t\t\t# if compression quality is 0, only the original topic is published"))
+        print("")
+        sys.exit(0)
+
+
 
 if len(sys.argv) > 1:
         if sys.argv[1] == "--help" or sys.argv[1] == "-h":
@@ -36,21 +56,21 @@ if len(sys.argv) > 4:
 
 
 
-show_gui = True
 #stream = urllib.urlopen('http://localhost:8080/frame.mjpg')
 #stream = urllib.urlopen('http://vivotek-0:8080/video.mjpg')
 #stream = urllib.urlopen('http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240')
 stream = urllib.urlopen(stream_url)
 
 rospy.init_node('mjpeg_stream_to_ros_topic', anonymous=True)
-republisher = rospy.Publisher (topic_name + '/compressed', CompressedImage, queue_size = 1)
+mjpeg_publisher      = rospy.Publisher (topic_name + '/compressed'		, CompressedImage, queue_size = 1)
+low_qual_republisher = rospy.Publisher (topic_name + '_low_qual' + '/compressed', CompressedImage, queue_size = 1)
 
 
 def signal_handler(sig, frame):
         print('Ctrl+C pressed, exiting...')
         sys.exit(0)
 
-def jpeg_publisher(data):
+def jpeg_publisher(data, publisher):
         #### Create CompressedIamge ####
         msg = CompressedImage()
         msg.header.stamp = rospy.Time.now()
@@ -59,21 +79,7 @@ def jpeg_publisher(data):
         #msg.data = np.array(cv2.imencode('.jpg', self.last_img)[1]).tostring()
         msg.data = data.tostring()
         # Publish new image
-        republisher.publish(msg)
-
-def syntax(argv):
-        print("")
-        print("Syntax:")
-        print("-------")
-        print("\t", argv[0], "{--help,-h}\t\t\tShows this help")
-        print("\t", argv[0], "[http://host:port/mjpeg-stream.mjpg] [mjpeg_topic] [(re)compression] [show_gui]")
-        print("")
-        print("Examples:")
-        print("---------")
-        print("\t", argv[0], "http://vivotek-0:8080/video.mjpg /vivotek_0_republished 40")
-        print("\t", argv[0], "http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240 /a_random_ip_camera 90 show_gui")
-        print("")
-        sys.exit(0)
+        publisher.publish(msg)
 
 
 
@@ -98,4 +104,14 @@ while True:
 		if cv2.waitKey(1) == 27:
 			exit(0)   
 
-        jpeg_publisher(numpy_data)
+	if jpeg_quality:
+		i = cv2.imdecode(numpy_data, cv2.IMREAD_COLOR)
+		#retval, jpeg_data = cv2.imencode('.jpg', i, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
+		#data = np.array(cv2.imencode('.jpg', i, [int(cv2.IMWRITE_JPEG_QUALITY), jpeg_quality])[1]).tostring()
+		retval, jpeg_data = cv2.imencode('.jpg', i, [cv2.IMWRITE_JPEG_QUALITY, int(jpeg_quality)])
+		if verbose:
+			print("Successful recompression: {} - orig jpeg: {} - recompressed: {}".format(retval, numpy_data.size, jpeg_data.size))
+		if retval:
+			jpeg_publisher(jpeg_data, low_qual_republisher)
+
+        jpeg_publisher(numpy_data, mjpeg_publisher)
