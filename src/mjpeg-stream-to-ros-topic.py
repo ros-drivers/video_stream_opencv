@@ -92,13 +92,17 @@ while True:
     bytes += stream.read(1024)
     a = bytes.find('\xff\xd8')
     b = bytes.find('\xff\xd9')
+    #print(bytes)
+    #if b != -1:
+	#print(a, b)
+	#print(bytes[a-60:a+100])
     if a != -1 and b != -1:
         jpg = bytes[a:b+2]
         bytes = bytes[b+2:]
         #print(bytes)
 
 	numpy_data = np.fromstring(jpg, dtype=np.uint8)
-        print(numpy_data.size)
+        #print(numpy_data.size)
 	if show_gui:
 		i = cv2.imdecode(numpy_data, cv2.IMREAD_COLOR)
 		cv2.imshow('img', i)
