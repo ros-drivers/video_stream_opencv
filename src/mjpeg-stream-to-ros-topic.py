@@ -23,7 +23,7 @@ topic_name   = 'mjpeg_publisher'
 stream_url   = 'http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240'
 jpeg_quality = 40
 show_gui     = False
-verbose      = False
+verbose      = True
 
 def syntax(argv):
         print("")
@@ -98,13 +98,14 @@ while True:
         #print(bytes)
 
 	numpy_data = np.fromstring(jpg, dtype=np.uint8)
+        print(numpy_data.size)
 	if show_gui:
 		i = cv2.imdecode(numpy_data, cv2.IMREAD_COLOR)
 		cv2.imshow('img', i)
 		if cv2.waitKey(1) == 27:
 			exit(0)   
 
-	if jpeg_quality:
+	if int(jpeg_quality) > 0:
 		i = cv2.imdecode(numpy_data, cv2.IMREAD_COLOR)
 		retval, jpeg_data = cv2.imencode('.jpg', i, [cv2.IMWRITE_JPEG_QUALITY, int(jpeg_quality)])
 		if verbose:
