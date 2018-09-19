@@ -19,26 +19,25 @@ from sensor_msgs.msg import CompressedImage
 print(sys.version)
 print(sys.argv)
 
+topic_name     = 'mjpeg_publisher'
+stream_url     = 'http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240'
+jpeg_quality   = 40
 est_image_size = 409600
-
-topic_name   = 'mjpeg_publisher'
-stream_url   = 'http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240'
-jpeg_quality = 40
-show_gui     = False
-verbose      = True
+show_gui       = False
+verbose        = True
 
 def syntax(argv):
         print("")
         print("Syntax:")
         print("-------")
         print("\t{} {}".format(argv[0], "{--help,-h}\t\t\t\t\t\t\t\t\t\t\t# Shows this help"))
-        print("\t{} {}".format(argv[0], "[http://host:port/mjpeg-stream.mjpg] [mjpeg_topic] [(re)compression quality 0-99] [show_gui]"))
+        print("\t{} {}".format(argv[0], "[http://host:port/mjpeg-stream.mjpg] [mjpeg_topic] [(re)compression quality 0-99] [socket_read_size] [show_gui]"))
         print("")
         print("Examples:")
         print("---------")
         print("\t{} {}".format(argv[0], "http://vivotek-0:8080/video.mjpg /vivotek_0 40"))
-        print("\t{} {}".format(argv[0], "http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240 /a_random_ip_camera 90 show_gui"))
-        print("\t{} {}".format(argv[0], "http://vivotek-0:8080/video.mjpg /vivotek_0 0\t\t\t\t\t# if compression quality is 0, only the original topic is published"))
+        print("\t{} {}".format(argv[0], "http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240 /a_random_ip_camera 90 409600 show_gui\n\t\t\t\t\t\t\t\t# 500k may be the average size of a jpeg full HD frame @ 90% quality, while 8k maybe a 640x480 frame at 40% quality"))
+        print("\t{} {}".format(argv[0], "http://vivotek-0:8080/video3.mjpg /vivotek_0 0 4096\n\t\t\t\t\t\t\t\t# if compression quality is 0, only the original topic is published"))
         print("")
         sys.exit(0)
 
@@ -47,13 +46,15 @@ def syntax(argv):
 if len(sys.argv) > 1:
         if sys.argv[1] == "--help" or sys.argv[1] == "-h":
                 syntax(sys.argv)
-        stream_url   = sys.argv[1]
+        stream_url     = sys.argv[1]
 if len(sys.argv) > 2:
-        topic_name   = sys.argv[2]
+        topic_name     = sys.argv[2]
 if len(sys.argv) > 3:
-        jpeg_quality = sys.argv[3]
+        jpeg_quality   = int(sys.argv[3])
 if len(sys.argv) > 4:
-        show_gui     = sys.argv[4]
+        est_image_size = int(sys.argv[4])
+if len(sys.argv) > 5:
+        show_gui       = sys.argv[5]
 
 
 
@@ -65,7 +66,7 @@ stream = urllib.urlopen(stream_url)
 
 rospy.init_node('mjpeg_stream_to_ros_topic', anonymous=True)
 mjpeg_publisher      = rospy.Publisher (topic_name + '/compressed'		, CompressedImage, queue_size = 1)
-if int(jpeg_quality) > 0:
+if jpeg_quality > 0:
 	low_qual_republisher = rospy.Publisher (topic_name + '_low_qual' + '/compressed', CompressedImage, queue_size = 1)
 
 
@@ -100,6 +101,7 @@ while True:
     if a != -1 and b != -1:
         jpg = bytes[a:b+2]
         bytes = bytes[b+2:]
+	#print("----------------------------------------------------------", a, b, len(bytes))
 
 	a = b = -1
 
@@ -110,9 +112,9 @@ while True:
 		if cv2.waitKey(1) == 27:
 			exit(0)   
 
-	if int(jpeg_quality) > 0:
+	if jpeg_quality > 0:
 		i = cv2.imdecode(numpy_data, cv2.IMREAD_COLOR)
-		retval, jpeg_data = cv2.imencode('.jpg', i, [cv2.IMWRITE_JPEG_QUALITY, int(jpeg_quality)])
+		retval, jpeg_data = cv2.imencode('.jpg', i, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
 		if verbose:
 			print("Successful recompression: {} - orig jpeg: {} - recompressed: {}".format(retval, numpy_data.size, jpeg_data.size))
 		if retval:
