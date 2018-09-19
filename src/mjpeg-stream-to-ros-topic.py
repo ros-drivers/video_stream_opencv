@@ -90,13 +90,17 @@ print('Press Ctrl+C to quit')
 bytes = ''
 a = b = -1
 while True:
-    bytes += stream.read(1024)
+    bytes += stream.read(51200)
     if a == -1:
 	a = bytes.find('\xff\xd8')
+#    else:
+#	print("Skipping a find")
     if b == -1:
 	b = bytes.find('\xff\xd9')
+#    else:
+#	print("Skipping b find")
     #print(bytes)
-    #print(a, b, len(bytes))
+#    print(a, b, len(bytes))
     #if b != -1:
 	#print(a, b)
 	#print(bytes[a-60:a+100])
@@ -104,7 +108,7 @@ while True:
         jpg = bytes[a:b+2]
         bytes = bytes[b+2:]
         #print(bytes)
-	#print("----------------------------------------------------------", a, b, len(bytes))
+	print("----------------------------------------------------------", a, b, len(bytes))
 
 	a = b = -1
 
