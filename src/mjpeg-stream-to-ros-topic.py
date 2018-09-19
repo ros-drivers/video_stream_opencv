@@ -76,7 +76,7 @@ parser.add_argument('--show_gui', help='Show the images that are being received'
                         metavar=False, default=False)
 parser.add_argument('--verbose', help='Be more verbose', dest='verbose', type=bool,
                         metavar=False, default=False)
-parser.add_argument('caminfo_file', help='Camera info file', metavar='~/.ros/camera_info/camera.yaml')
+parser.add_argument('--caminfo_file', help='Camera info file', metavar='~/.ros/camera_info/camera.yaml', default='')
 
 args = parser.parse_args()
 
@@ -111,8 +111,11 @@ mjpeg_publisher      = rospy.Publisher (args.topic_name + '/compressed'		, Compr
 if args.jpeg_quality > 0:
 	low_qual_republisher = rospy.Publisher (args.topic_name + '_low_qual' + '/compressed', CompressedImage, queue_size = 1)
 
-cam_pub  = rospy.Publisher("camera_info", CameraInfo, queue_size = 1)
-cam_info = parse_calibration_yaml(args.caminfo_file)
+if args.caminfo_file != '':
+	cam_pub  = rospy.Publisher("camera_info", CameraInfo, queue_size = 1)
+	cam_info = parse_calibration_yaml(args.caminfo_file)
+else:
+	cam_pub  = None
 
 def signal_handler(sig, frame):
         print('Ctrl+C pressed, exiting...')
