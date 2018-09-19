@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<launch>
+
+  	<arg name="camera_name" default="vivotek" />
+  	<arg name="full_hd_stream" default="full_hd" />
+  	<arg name="low_qual_stream" default="low_qual" />
+
+   	<!-- images will be published at /camera_name/... -->
+   	<group ns="$(arg camera_name)">
+
+	<!--
+
+	rosrun video_stream_opencv mjpeg-stream-to-ros-topic.py http://vivotek-0:8080/video.mjpg  /vivotek_0_full_hd 0 409600
+	rosrun video_stream_opencv mjpeg-stream-to-ros-topic.py http://vivotek-0:8080/video3.mjpg /vivotek_0_low_qual 0 4096
+
+	-->
+
+   	<!-- images will be published at /camera_name/full_hd/... -->
+   	<group ns="$(arg full_hd_stream)">
+		<!-- URL of the stream (e.g. http://vivotek-0:8080/video.mjpg or http://vivotek-0:8080/video3.mjpg or http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240 or whatever -->
+		<arg name="video_stream_url" default="http://vivotek-0:8080/video.mjpg" />
+		<!-- set the python socket receiving buffer: it's very important to set a read rate as close as possible to the expected frame size to optimize the (poor) python performance.
+		     If unsure, enable the printing of statistics inside the script to have an idea of the size of the received images. -->
+		<arg name="buffer_queue_size" default="409600" />
+		<!-- topic name: will be preceded by group names and followed by /compressed -->
+		<arg name="topic_name" default="image" />
+		<!-- low_quality republishing % - leave it to 0 to avoid republishing... it's a job already done by the Vivotek itself -->
+		<arg name="jpeg_quality" default="0" />
+
+		<node pkg="video_stream_opencv" type="mjpeg-stream-to-ros-topic.py" args="$(arg video_stream_url) $(arg topic_name) $(arg jpeg_quality) $(arg buffer_queue_size)"
+			name="mjpeg_stream_python_$(arg camera_name)_$(arg full_hd_stream)" output="screen">
+		</node>
+   	</group>
+   
+   	<!-- images will be published at /camera_name/low_qual/... -->
+   	<group ns="$(arg low_qual_stream)">
+		<!-- URL of the stream (e.g. http://vivotek-0:8080/video.mjpg or http://vivotek-0:8080/video3.mjpg or http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240 or whatever -->
+		<arg name="video_stream_url" default="http://vivotek-0:8080/video3.mjpg" />
+		<!-- set the python socket receiving buffer: it's very important to set a read rate as close as possible to the expected frame size to optimize the (poor) python performance.
+		     If unsure, enable the printing of statistics inside the script to have an idea of the size of the received images. -->
+		<arg name="buffer_queue_size" default="4096" />
+		<!-- topic name: will be preceded by group names and followed by /compressed -->
+		<arg name="topic_name" default="image" />
+		<!-- low_quality republishing % - leave it to 0 to avoid republishing... it's a job already done by the Vivotek itself -->
+		<arg name="jpeg_quality" default="0" />
+
+		<node pkg="video_stream_opencv" type="mjpeg-stream-to-ros-topic.py" args="$(arg video_stream_url) $(arg topic_name) $(arg jpeg_quality) $(arg buffer_queue_size)"
+			name="mjpeg_stream_python_$(arg camera_name)_$(arg low_qual_stream)" output="screen">
+		</node>
+   	</group>
+
+	</group>
+
+</launch>
