@@ -76,9 +76,10 @@ parser.add_argument('--show_gui', help='Show the images that are being received'
                         metavar=False, default=False)
 parser.add_argument('-v', help='Be more verbose', dest='verbose', type=bool,
                         metavar=False, default=False)
-parser.add_argument('-c', help='Camera info file', metavar='~/.ros/camera_info/camera.yaml', default='')
+parser.add_argument('-c', help='Camera info file', metavar='~/.ros/camera_info/camera.yaml', dest='caminfo_file', default='')
 
-args = parser.parse_args()
+#args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 print("URL: ", args.stream_url, "Output topic: ", args.topic_name, "Est. image size: ", args.est_image_size, "Camera info file: ", args.caminfo_file, "Jpeg quality: ", args.jpeg_quality, "Show GUI: ", args.show_gui, "Verbose: ", args.verbose)
 
