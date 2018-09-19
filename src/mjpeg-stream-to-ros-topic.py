@@ -65,7 +65,8 @@ stream = urllib.urlopen(stream_url)
 
 rospy.init_node('mjpeg_stream_to_ros_topic', anonymous=True)
 mjpeg_publisher      = rospy.Publisher (topic_name + '/compressed'		, CompressedImage, queue_size = 1)
-low_qual_republisher = rospy.Publisher (topic_name + '_low_qual' + '/compressed', CompressedImage, queue_size = 1)
+if int(jpeg_quality) > 0:
+	low_qual_republisher = rospy.Publisher (topic_name + '_low_qual' + '/compressed', CompressedImage, queue_size = 1)
 
 
 def signal_handler(sig, frame):
