@@ -30,7 +30,7 @@
 		<arg name="jpeg_quality" default="0" />
 		<!-- the camera info file to also publish image resolution and rectification parameters along image topics -->
 		<!-- arg name="caminfo_file" default="~/.ros/camera_info/camera.yaml" / -->
-		<arg name="caminfo_file" default="~/.ros/camera_info/vivotek_IB8168_C.yaml"/>
+		<arg name="caminfo_file" default="$(optenv HOME)/.ros/camera_info/vivotek_IB8168_C.yaml"/>
 
 		<node pkg="video_stream_opencv" type="mjpeg-stream-to-ros-topic.py" args="$(arg video_stream_url) $(arg topic_name) $(arg buffer_queue_size) -c $(arg caminfo_file)"
 			name="mjpeg_stream_python_$(arg camera_name)_$(arg full_hd_stream)" output="screen">
