@@ -19,6 +19,8 @@ from sensor_msgs.msg import CompressedImage
 print(sys.version)
 print(sys.argv)
 
+est_image_size = 409600
+
 topic_name   = 'mjpeg_publisher'
 stream_url   = 'http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240'
 jpeg_quality = 40
@@ -90,7 +92,7 @@ print('Press Ctrl+C to quit')
 bytes = ''
 a = b = -1
 while True:
-    bytes += stream.read(51200)
+    bytes += stream.read(est_image_size)
     if a == -1:
 	a = bytes.find('\xff\xd8')
 #    else:
