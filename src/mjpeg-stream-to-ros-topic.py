@@ -54,7 +54,9 @@ if len(sys.argv) > 3:
 if len(sys.argv) > 4:
         est_image_size = int(sys.argv[4])
 if len(sys.argv) > 5:
-        show_gui       = sys.argv[5]
+	show_gui_str = sys.argv[5].lower()
+	if show_gui_str == "true" or show_gui_str == "1" or show_gui_str == "yes"
+        show_gui       = True
 
 
 
