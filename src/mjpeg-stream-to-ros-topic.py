@@ -30,39 +30,6 @@ print(sys.argv)
 #args.verbose        = True
 #args.caminfo_file   = '/home/biagio/.ros/camera_info/vivotek_IB8168_C.yaml'
 
-#def syntax(argv):
-#        print("")
-#        print("Syntax:")
-#        print("-------")
-#        print("\t{} {}".format(argv[0], "{--help,-h}\t\t\t\t\t\t\t\t\t\t\t# Shows this help"))
-#        print("\t{} {}".format(argv[0], "[http://host:port/mjpeg-stream.mjpg] [mjpeg_topic] [(re)compression quality 0-99] [socket_read_size] [show_gui]"))
-#        print("")
-#        print("Examples:")
-#        print("---------")
-#        print("\t{} {}".format(argv[0], "http://vivotek-0:8080/video.mjpg /vivotek_0 40"))
-#        print("\t{} {}".format(argv[0], "http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240 /a_random_ip_camera 90 409600 show_gui\n\t\t\t\t\t\t\t\t# 500k may be the average size of a jpeg full HD frame @ 90% quality, while 8k maybe a 640x480 frame at 40% quality"))
-#        print("\t{} {}".format(argv[0], "http://vivotek-0:8080/video3.mjpg /vivotek_0 0 4096\n\t\t\t\t\t\t\t\t# if compression quality is 0, only the original topic is published"))
-#        print("")
-#        sys.exit(0)
-#
-#
-#
-#if len(sys.argv) > 1:
-#        if sys.argv[1] == "--help" or sys.argv[1] == "-h":
-#                syntax(sys.argv)
-#        stream_url     = sys.argv[1]
-#if len(sys.argv) > 2:
-#        topic_name     = sys.argv[2]
-#if len(sys.argv) > 3:
-#        jpeg_quality   = int(sys.argv[3])
-#if len(sys.argv) > 4:
-#        est_image_size = int(sys.argv[4])
-#if len(sys.argv) > 5:
-#	show_gui_str = sys.argv[5].lower()
-#	if show_gui_str == "true" or show_gui_str == "1" or show_gui_str == "yes":
-#		show_gui       = True
-
-
 parser = argparse.ArgumentParser(description='Given a MJPEG HTTP stream, this node publishes a CompressedImage (and its CameraInfo) topics.')
 parser.add_argument('stream_url', help='The MJPEG URL', metavar='http://vivotek-0:8080/video3.mjpg',
                               default='http://vivotek-0:8080/video.mjpg')
@@ -78,7 +45,6 @@ parser.add_argument('-v', help='Be more verbose', dest='verbose', type=bool,
                         metavar=False, default=False)
 parser.add_argument('-c', help='Camera info file', metavar='~/.ros/camera_info/camera.yaml', dest='caminfo_file', default='')
 
-#args = parser.parse_args()
 args, unknown = parser.parse_known_args()
 
 print("URL: ", args.stream_url, "Output topic: ", args.topic_name, "Est. image size: ", args.est_image_size, "Camera info file: ", args.caminfo_file, "Jpeg quality: ", args.jpeg_quality, "Show GUI: ", args.show_gui, "Verbose: ", args.verbose)
@@ -101,10 +67,6 @@ def parse_calibration_yaml(calib_file):
     return cam_info
 
 
-
-#stream = urllib.urlopen('http://localhost:8080/frame.mjpg')
-#stream = urllib.urlopen('http://vivotek-0:8080/video.mjpg')
-#stream = urllib.urlopen('http://iris.not.iac.es/axis-cgi/mjpg/video.cgi?resolution=320x240')
 stream = urllib.urlopen(args.stream_url)
 
 rospy.init_node('mjpeg_stream_to_ros_topic', anonymous=True)
