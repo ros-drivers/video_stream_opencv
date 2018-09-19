@@ -87,7 +87,6 @@ def jpeg_publisher(data, publisher):
 
 signal.signal(signal.SIGINT, signal_handler)
 print('Press Ctrl+C to quit')
-#signal.pause()
 
 bytes = ''
 a = b = -1
@@ -95,27 +94,15 @@ while True:
     bytes += stream.read(est_image_size)
     if a == -1:
 	a = bytes.find('\xff\xd8')
-#    else:
-#	print("Skipping a find")
     if b == -1:
 	b = bytes.find('\xff\xd9')
-#    else:
-#	print("Skipping b find")
-    #print(bytes)
-#    print(a, b, len(bytes))
-    #if b != -1:
-	#print(a, b)
-	#print(bytes[a-60:a+100])
     if a != -1 and b != -1:
         jpg = bytes[a:b+2]
         bytes = bytes[b+2:]
-        #print(bytes)
-	print("----------------------------------------------------------", a, b, len(bytes))
 
 	a = b = -1
 
 	numpy_data = np.fromstring(jpg, dtype=np.uint8)
-        #print(numpy_data.size)
 	if show_gui:
 		i = cv2.imdecode(numpy_data, cv2.IMREAD_COLOR)
 		cv2.imshow('img', i)
