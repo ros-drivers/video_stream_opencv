@@ -74,9 +74,9 @@ parser.add_argument('est_image_size', help='The estimated image size, to optimiz
                         metavar='409600')
 parser.add_argument('--show_gui', help='Show the images that are being received', dest='show_gui', type=bool,
                         metavar=False, default=False)
-parser.add_argument('--verbose', help='Be more verbose', dest='verbose', type=bool,
+parser.add_argument('-v', help='Be more verbose', dest='verbose', type=bool,
                         metavar=False, default=False)
-parser.add_argument('--caminfo_file', help='Camera info file', metavar='~/.ros/camera_info/camera.yaml', default='')
+parser.add_argument('-c', help='Camera info file', metavar='~/.ros/camera_info/camera.yaml', default='')
 
 args = parser.parse_args()
 

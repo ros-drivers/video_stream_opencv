@@ -13,6 +13,8 @@
 	rosrun video_stream_opencv mjpeg-stream-to-ros-topic.py http://vivotek-0:8080/video.mjpg  /vivotek_0_full_hd 0 409600
 	rosrun video_stream_opencv mjpeg-stream-to-ros-topic.py http://vivotek-0:8080/video3.mjpg /vivotek_0_low_qual 0 4096
 
+	rosrun video_stream_opencv mjpeg-stream-to-ros-topic.py http://vivotek-0:8080/video3.mjpg /vivotek_0_low_qual 4096 - -caminfo_file ~/.ros/camera_info/vivotek_IB8168_C.yaml
+
 	-->
 
    	<!-- images will be published at /camera_name/full_hd/... -->
@@ -26,8 +28,11 @@
 		<arg name="topic_name" default="image" />
 		<!-- low_quality republishing % - leave it to 0 to avoid republishing... it's a job already done by the Vivotek itself -->
 		<arg name="jpeg_quality" default="0" />
+		<!-- the camera info file to also publish image resolution and rectification parameters along image topics -->
+		<!-- arg name="caminfo_file" default="~/.ros/camera_info/camera.yaml" / -->
+		<arg name="caminfo_file" default="~/.ros/camera_info/vivotek_IB8168_C.yaml"/>
 
-		<node pkg="video_stream_opencv" type="mjpeg-stream-to-ros-topic.py" args="$(arg video_stream_url) $(arg topic_name) $(arg jpeg_quality) $(arg buffer_queue_size)"
+		<node pkg="video_stream_opencv" type="mjpeg-stream-to-ros-topic.py" args="$(arg video_stream_url) $(arg topic_name) $(arg buffer_queue_size) -c $(arg caminfo_file)"
 			name="mjpeg_stream_python_$(arg camera_name)_$(arg full_hd_stream)" output="screen">
 		</node>
    	</group>
@@ -44,7 +49,7 @@
 		<!-- low_quality republishing % - leave it to 0 to avoid republishing... it's a job already done by the Vivotek itself -->
 		<arg name="jpeg_quality" default="0" />
 
-		<node pkg="video_stream_opencv" type="mjpeg-stream-to-ros-topic.py" args="$(arg video_stream_url) $(arg topic_name) $(arg jpeg_quality) $(arg buffer_queue_size)"
+		<node pkg="video_stream_opencv" type="mjpeg-stream-to-ros-topic.py" args="$(arg video_stream_url) $(arg topic_name) $(arg buffer_queue_size)"
 			name="mjpeg_stream_python_$(arg camera_name)_$(arg low_qual_stream)" output="screen">
 		</node>
    	</group>
