@@ -84,13 +84,14 @@ sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::ImagePtr
 }
 
 
-void do_capture(ros::NodeHandle &nh) {
+void do_capture(ros::NodeHandle &nh, int flip_value) {
     cv::Mat frame;
     ros::Rate camera_fps_rate(set_camera_fps);
 
     // Read frames as fast as possible
     while (nh.ok()) {
         cap >> frame;
+        cv::flip(frame, frame, flip_value);
         if (video_stream_provider_type == "videofile")
         {
             camera_fps_rate.sleep();
@@ -249,7 +250,7 @@ int main(int argc, char** argv)
     cam_info_msg.header = header;
 
     ROS_INFO_STREAM("Opened the stream, starting to publish.");
-    boost::thread cap_thread(do_capture, nh);
+    boost::thread cap_thread(do_capture, nh, flip_value);
 
     ros::Rate r(fps);
     while (nh.ok()) {
