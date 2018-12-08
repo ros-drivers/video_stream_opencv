@@ -51,6 +51,7 @@ cv::VideoCapture cap;
 std::string video_stream_provider_type;
 double set_camera_fps;
 int max_queue_size;
+bool run = true;
 
 // Based on the ros tutorial on transforming opencv images to Image messages
 
@@ -90,7 +91,11 @@ void do_capture(ros::NodeHandle &nh) {
 
     // Read frames as fast as possible
     while (nh.ok()) {
-        cap >> frame;
+        if (!cap.read(frame)) {
+            ROS_ERROR_STREAM("Could not read from stream.");
+            run = false;
+            return;
+        }
 	if (video_stream_provider_type == "videofile")
 	{
          camera_fps_rate.sleep();
@@ -236,7 +241,7 @@ int main(int argc, char** argv)
         cap.set(CV_CAP_PROP_FRAME_HEIGHT, height_target);
     }
 
-    cv::Mat frame;
+    cv::Mat frame, frame_bgra;
     sensor_msgs::ImagePtr msg;
     sensor_msgs::CameraInfo cam_info_msg;
     std_msgs::Header header;
@@ -249,7 +254,7 @@ int main(int argc, char** argv)
     boost::thread cap_thread(do_capture, nh);
 
     ros::Rate r(fps);
-    while (nh.ok()) {
+    while (nh.ok() && run) {
 	if (!framesQueue.empty())
 		framesQueue.pull(frame);
 
@@ -259,7 +264,8 @@ int main(int argc, char** argv)
                 // Flip the image if necessary
                 if (flip_image)
                     cv::flip(frame, frame, flip_value);
-                msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
+                cv::cvtColor(frame, frame_bgra, cv::COLOR_BGR2BGRA);
+                msg = cv_bridge::CvImage(header, "bgra8", frame_bgra).toImageMsg();
                 // Create a default camera info if we didn't get a stored one on initialization
                 if (cam_info_msg.distortion_model == ""){
                     ROS_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
