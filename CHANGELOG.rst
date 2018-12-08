@@ -2,6 +2,21 @@
 Changelog for package video_stream_opencv
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+1.1.4 (2018-07-23)
+------------------
+* Fix bug, cv::Mat needs to be cloned otherwise all entries in the queue will point to the same frame. This resulted in always returning the last received frame.
+* Contributors: Axel13fr
+
+1.1.3 (2018-07-11)
+------------------
+* Fixing ever growing memory when using boost::sync_queue (Issue #20) by reimplementing thread safety of frames queue using std classes. boost::sync_queue is buggy (keeps on allocating memory over time).
+* Contributors: Axel13fr
+
+1.1.2 (2018-06-12)
+------------------
+* Fix empty frame id in camera info header when providing a calibration file.
+* Contributors: tim-fan
+
 1.1.1 (2018-04-20)
 ------------------
 * Fix error of using camera_name instead of identifying the type of the provider
