@@ -2,6 +2,13 @@
 Changelog for package video_stream_opencv
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Exit the program if we reach the end of the video when playing a video file (Issue #23)
+* Throw exception when a frame cant be captured (Issue #23, PR #27)
+* Add loop_video parameter for videofiles (PR #24)
+* Contributors: Sammy Pfeiffer, iory
+
 1.1.4 (2018-07-23)
 ------------------
 * Fix bug, cv::Mat needs to be cloned otherwise all entries in the queue will point to the same frame. This resulted in always returning the last received frame.
