@@ -54,7 +54,7 @@ std::string video_stream_provider;
 std::string video_stream_provider_type;
 double set_camera_fps;
 int max_queue_size;
-bool loop;
+bool loop_videofile;
 
 // Based on the ros tutorial on transforming opencv images to Image messages
 
@@ -99,7 +99,7 @@ void do_capture(ros::NodeHandle &nh) {
         {
             camera_fps_rate.sleep();
         }
-        if (video_stream_provider_type == "videofile" && loop &&
+        if (video_stream_provider_type == "videofile" && loop_videofile &&
             frame_counter == cap.get(CV_CAP_PROP_FRAME_COUNT)) {
             cap.open(video_stream_provider);
             frame_counter = 0;
@@ -237,7 +237,7 @@ int main(int argc, char** argv)
     else
         flip_image = false;
 
-    _nh.param("loop", loop, false);
+    _nh.param("loop_videofile", loop_videofile, false);
 
     if(!cap.isOpened()){
         ROS_ERROR_STREAM("Could not open the stream.");
