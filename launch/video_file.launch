@@ -22,8 +22,8 @@
 	  	<arg name="flip_horizontal" value="false" />
 	  	<!-- flip the image vertically -->
 	  	<arg name="flip_vertical" value="false" />
-      <!-- enable loop playback mode -->
-      <arg name="loop_videofile" value="true" />
+        <!-- enable looping playback -->
+        <arg name="loop_videofile" value="true" />
 	  	<!-- visualize on an image_view window the stream generated -->
 	  	<arg name="visualize" value="true" />
    </include>

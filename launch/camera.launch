@@ -22,7 +22,7 @@
     <!-- force width and height, 0 means no forcing -->
     <arg name="width" default="0"/>
     <arg name="height" default="0"/>
-    <!-- If loop_videofile is true, loop playback is enabled -->
+    <!-- enable looping playback, only if video_stream_provider is a video file -->
     <arg name="loop_videofile" default="false" />
   	<!-- if show a image_view window subscribed to the generated stream -->
 	<arg name="visualize" default="false"/>
