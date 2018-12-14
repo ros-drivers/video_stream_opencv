@@ -93,7 +93,11 @@ void do_capture(ros::NodeHandle &nh) {
     int frame_counter = 0;
     // Read frames as fast as possible
     while (nh.ok()) {
-        cap >> frame;
+        if (!cap.read(frame))
+        {
+            throw std::runtime_error("Could not capture frame!");
+        }
+
         frame_counter++;
         if (video_stream_provider_type == "videofile")
         {
