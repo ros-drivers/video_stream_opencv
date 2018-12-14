@@ -103,10 +103,19 @@ void do_capture(ros::NodeHandle &nh) {
         {
             camera_fps_rate.sleep();
         }
-        if (video_stream_provider_type == "videofile" && loop_videofile &&
-            frame_counter == cap.get(CV_CAP_PROP_FRAME_COUNT)) {
-            cap.open(video_stream_provider);
-            frame_counter = 0;
+        if (video_stream_provider_type == "videofile" &&
+            frame_counter == cap.get(CV_CAP_PROP_FRAME_COUNT)) 
+        {
+            if (loop_videofile)
+            {
+                cap.open(video_stream_provider);
+                frame_counter = 0;
+            }
+            else {
+                // Exit gently if we are done
+                nh.shutdown();
+                exit(EXIT_SUCCESS);
+            }
         }
 
         if(!frame.empty()) {
