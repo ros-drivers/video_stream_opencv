@@ -2,8 +2,8 @@
 Changelog for package video_stream_opencv
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.5 (2018-12-14)
+------------------
 * Exit the program if we reach the end of the video when playing a video file (Issue #23)
 * Throw exception when a frame cant be captured (Issue #23, PR #27)
 * Add loop_video parameter for videofiles (PR #24)
