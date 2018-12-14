@@ -78,6 +78,7 @@ If you want to publish all images (don't drop any and you don't mind some possib
  * `camera_info_url`: camera info loading, take care as it needs the "file:///" at the start , e.g.: `"file:///$(find your_camera_package)/config/your_camera.yaml"`.
  * `flip_horizontal`: flip horizontally the image (mirror it).
  * `flip_vertical`: flip vertically the image (upside down).
+ * `loop_videofile`: flag of loop playback. If `loop_videofile` is `true`, loop playback is enabled.
  * `width` and `height`: force a width and height to the capturing device (if it allows), 0 means no forcing.
 
 # Extras

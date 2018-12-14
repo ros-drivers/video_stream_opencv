@@ -50,9 +50,11 @@
 std::mutex q_mutex;
 std::queue<cv::Mat> framesQueue;
 cv::VideoCapture cap;
+std::string video_stream_provider;
 std::string video_stream_provider_type;
 double set_camera_fps;
 int max_queue_size;
+bool loop_videofile;
 
 // Based on the ros tutorial on transforming opencv images to Image messages
 
@@ -88,12 +90,19 @@ void do_capture(ros::NodeHandle &nh) {
     cv::Mat frame;
     ros::Rate camera_fps_rate(set_camera_fps);
 
+    int frame_counter = 0;
     // Read frames as fast as possible
     while (nh.ok()) {
         cap >> frame;
+        frame_counter++;
         if (video_stream_provider_type == "videofile")
         {
             camera_fps_rate.sleep();
+        }
+        if (video_stream_provider_type == "videofile" && loop_videofile &&
+            frame_counter == cap.get(CV_CAP_PROP_FRAME_COUNT)) {
+            cap.open(video_stream_provider);
+            frame_counter = 0;
         }
 
         if(!frame.empty()) {
@@ -121,7 +130,6 @@ int main(int argc, char** argv)
     image_transport::CameraPublisher pub = it.advertiseCamera("camera", 1);
 
     // provider can be an url (e.g.: rtsp://10.0.0.1:554) or a number of device, (e.g.: 0 would be /dev/video0)
-    std::string video_stream_provider;
     if (_nh.getParam("video_stream_provider", video_stream_provider)){
         ROS_INFO_STREAM("Resource video_stream_provider: " << video_stream_provider);
         // If we are given a string of 4 chars or less (I don't think we'll have more than 100 video devices connected)
@@ -228,6 +236,8 @@ int main(int argc, char** argv)
         flip_value = 0;
     else
         flip_image = false;
+
+    _nh.param("loop_videofile", loop_videofile, false);
 
     if(!cap.isOpened()){
         ROS_ERROR_STREAM("Could not open the stream.");
