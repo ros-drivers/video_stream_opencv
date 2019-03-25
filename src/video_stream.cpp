@@ -275,6 +275,7 @@ int main(int argc, char** argv)
     boost::thread cap_thread(do_capture, nh);
 
     ros::Rate r(fps);
+    bool is_new_image = true;
     while (nh.ok()) {
 
         {
@@ -282,6 +283,7 @@ int main(int argc, char** argv)
             if (!framesQueue.empty()){
                 frame = framesQueue.front();
                 framesQueue.pop();
+                is_new_image = true;
             }
         }
 
@@ -289,7 +291,7 @@ int main(int argc, char** argv)
             // Check if grabbed frame is actually filled with some content
             if(!frame.empty()) {
                 // Flip the image if necessary
-                if (flip_image)
+                if (flip_image && is_new_image)
                     cv::flip(frame, frame, flip_value);
                 msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
                 // Create a default camera info if we didn't get a stored one on initialization
@@ -301,7 +303,7 @@ int main(int argc, char** argv)
                 // The timestamps are in sync thanks to this publisher
                 pub.publish(*msg, cam_info_msg, ros::Time::now());
             }
-
+            is_new_image = false;
             ros::spinOnce();
         }
         r.sleep();
