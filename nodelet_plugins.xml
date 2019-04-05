@@ -1,0 +1,10 @@
+<library path="lib/libvideo_stream_opencv">
+  <class name="video_stream_opencv/VideoStream"
+         type="video_stream_opencv::VideoStreamNodelet"
+         base_class_type="nodelet::Nodelet">
+    <description>
+      A nodelet to publish a video stream
+      (the protocols that opencv supports are supported, including rtsp, webcams on /dev/video and video files)
+    </description>
+  </class>
+</library>
