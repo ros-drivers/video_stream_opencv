@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   camera_info_manager
   sensor_msgs
+  nodelet
 )
 
 
@@ -23,10 +24,14 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
-add_executable(video_stream src/video_stream.cpp)
-target_link_libraries(video_stream ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_library(${PROJECT_NAME} SHARED src/video_stream.cpp)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
-install(TARGETS video_stream
+add_executable(video_stream_node src/video_stream_node.cpp)
+target_link_libraries(video_stream_node ${catkin_LIBRARIES})
+set_target_properties(video_stream_node PROPERTIES OUTPUT_NAME video_stream)
+
+install(TARGETS video_stream_node
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(PROGRAMS
@@ -36,6 +41,9 @@ install(PROGRAMS
 )
 
 install(DIRECTORY launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+install(FILES nodelet_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 if (CATKIN_ENABLE_TESTING)
