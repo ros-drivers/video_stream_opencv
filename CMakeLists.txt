@@ -56,7 +56,7 @@ if (CATKIN_ENABLE_TESTING)
     http://techslides.com/demos/sample-videos/small.mp4
     DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/test
     MD5 a3ac7ddabb263c2d00b73e8177d15c8d)
-  add_rostest(test/test_video_file.test)
-  add_rostest(test/test_mjpg_stream.test)
+  add_rostest(test/test_video_file.test DEPENDENCIES small.mp4)
+  add_rostest(test/test_mjpg_stream.test DEPENDENCIES small.mp4)
   add_rostest(test/test_rtsp_stream.test)
 endif()
