@@ -12,10 +12,14 @@ find_package(catkin REQUIRED COMPONENTS
   camera_info_manager
   sensor_msgs
   nodelet
+  dynamic_reconfigure
 )
 
 
 find_package(OpenCV)
+
+generate_dynamic_reconfigure_options(
+  cfg/VideoStream.cfg)
 
 catkin_package()
 
