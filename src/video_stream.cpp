@@ -357,6 +357,20 @@ virtual void configCallback(VideoStreamConfig& config, uint32_t level) {
       need_resubscribe = true;
     }
 
+    if (cap && cap->isOpened()) {
+      cap->set(CV_CAP_PROP_BRIGHTNESS, config.brightness);
+      cap->set(CV_CAP_PROP_CONTRAST, config.contrast);
+      cap->set(CV_CAP_PROP_HUE, config.hue);
+      cap->set(CV_CAP_PROP_SATURATION, config.saturation);
+      if (config.auto_exposure) {
+        cap->set(CV_CAP_PROP_AUTO_EXPOSURE, 0.75);
+        config.exposure = 0.5;
+      } else {
+        cap->set(CV_CAP_PROP_AUTO_EXPOSURE, 0.25);
+        cap->set(CV_CAP_PROP_EXPOSURE, config.exposure);
+      }
+    }
+
     loop_videofile = config.loop_videofile;
 
     if (subscriber_num > 0 && need_resubscribe) {
