@@ -78,6 +78,7 @@ int width_target;
 int height_target;
 bool flip_horizontal;
 bool flip_vertical;
+bool capture_thread_running;
 boost::thread capture_thread;
 ros::Timer publish_timer;
 sensor_msgs::CameraInfo cam_info_msg;
@@ -119,7 +120,8 @@ virtual void do_capture() {
 
     int frame_counter = 0;
     // Read frames as fast as possible
-    while (nh->ok() && subscriber_num > 0) {
+    capture_thread_running = true;
+    while (nh->ok() && capture_thread_running && subscriber_num > 0) {
         if (!cap->isOpened()) {
           NODELET_WARN("Waiting for device...");
           cv::waitKey(100);
@@ -254,6 +256,7 @@ virtual void subscribe() {
 virtual void unsubscribe() {
   ROS_DEBUG("Unsubscribe");
   publish_timer.stop();
+  capture_thread_running = false;
   capture_thread.join();
   cap.reset();
 }
@@ -261,9 +264,9 @@ virtual void unsubscribe() {
 virtual void connectionCallbackImpl() {
   std::lock_guard<std::mutex> lock(s_mutex);
   if (subscriber_num == 0) {
+    subscriber_num++;
     subscribe();
   }
-  subscriber_num++;
 }
 
 virtual void disconnectionCallbackImpl() {
