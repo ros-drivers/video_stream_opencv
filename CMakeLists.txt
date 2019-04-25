@@ -33,6 +33,7 @@ target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(video_stream_node src/video_stream_node.cpp)
 target_link_libraries(video_stream_node ${catkin_LIBRARIES})
+add_dependencies(video_stream_node ${PROJECT_NAME}_gencfg)
 set_target_properties(video_stream_node PROPERTIES OUTPUT_NAME video_stream)
 
 install(TARGETS video_stream_node
