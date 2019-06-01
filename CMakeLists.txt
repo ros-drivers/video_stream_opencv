@@ -29,6 +29,7 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME} SHARED src/video_stream.cpp)
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(video_stream_node src/video_stream_node.cpp)
