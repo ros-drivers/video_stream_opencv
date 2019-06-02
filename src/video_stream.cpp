@@ -79,6 +79,7 @@ int height_target;
 bool flip_horizontal;
 bool flip_vertical;
 bool capture_thread_running;
+bool reopen_on_read_failure;
 boost::thread capture_thread;
 ros::Timer publish_timer;
 sensor_msgs::CameraInfo cam_info_msg;
@@ -127,10 +128,13 @@ virtual void do_capture() {
           cv::waitKey(100);
           continue;
         }
-        if (!cap->read(frame))
-        {
-          NODELET_FATAL("Could not capture frame!");
-          continue;
+        if (!cap->read(frame)) {
+          NODELET_ERROR("Could not capture frame");
+          if (reopen_on_read_failure) {
+            NODELET_WARN("trying to reopen the device");
+            unsubscribe();
+            subscribe();
+          }
         }
 
         frame_counter++;
@@ -372,6 +376,7 @@ virtual void configCallback(VideoStreamConfig& config, uint32_t level) {
     }
 
     loop_videofile = config.loop_videofile;
+    reopen_on_read_failure = config.reopen_on_read_failure;
 
     if (subscriber_num > 0 && need_resubscribe) {
       unsubscribe();
