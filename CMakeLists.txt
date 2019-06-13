@@ -55,7 +55,7 @@ if (CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
   catkin_download_test_data(small.mp4
     http://techslides.com/demos/sample-videos/small.mp4
-    DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/test
+    DESTINATION ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}/test
     MD5 a3ac7ddabb263c2d00b73e8177d15c8d)
   add_rostest(test/test_video_file.test DEPENDENCIES small.mp4)
   add_rostest(test/test_mjpg_stream.test DEPENDENCIES small.mp4)
