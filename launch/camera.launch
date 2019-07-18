@@ -25,12 +25,14 @@
     <!-- enable looping playback, only if video_stream_provider is a video file -->
     <arg name="loop_videofile" default="false" />
   	<!-- if show a image_view window subscribed to the generated stream -->
-	<arg name="visualize" default="false"/>
+	  <arg name="visualize" default="false"/>
+    <!-- output pixel encoding format, defaults to bgr8 -->
+	  <arg name="output_pixel_encoding" default="bgr8"/>
 
-   
+
    	<!-- images will be published at /camera_name/image with the image transports plugins (e.g.: compressed) installed -->
    	<group ns="$(arg camera_name)">
-	    <node pkg="video_stream_opencv" type="video_stream" name="$(arg camera_name)_stream" output="screen"> 
+	    <node pkg="video_stream_opencv" type="video_stream" name="$(arg camera_name)_stream" output="screen">
 	    	<remap from="camera" to="image_raw" />
 	    	<param name="camera_name" type="string" value="$(arg camera_name)" />
 	        <param name="video_stream_provider" type="string" value="$(arg video_stream_provider)" />
@@ -44,7 +46,8 @@
           <param name="loop_videofile" type="bool" value="$(arg loop_videofile)" />
 	        <param name="width" type="int" value="$(arg width)" />
 	        <param name="height" type="int" value="$(arg height)" />
-	    </node>
+          <param name="output_pixel_encoding" type="string" value="$(arg output_pixel_encoding)" />
+ 	    </node>
 
 	    <node if="$(arg visualize)" name="$(arg camera_name)_image_view" pkg="image_view" type="image_view">
 	    	<remap from="image" to="image_raw" />

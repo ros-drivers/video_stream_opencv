@@ -69,6 +69,7 @@ std::string video_stream_provider_type;
 std::string camera_name;
 std::string camera_info_url;
 std::string frame_id;
+std::string output_pixel_encoding;
 double set_camera_fps;
 double fps;
 int max_queue_size;
@@ -137,13 +138,17 @@ virtual void do_capture() {
           }
         }
 
+        if (output_pixel_encoding == "rgb8") {
+          cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
+        }
+
         frame_counter++;
         if (video_stream_provider_type == "videofile")
         {
             camera_fps_rate.sleep();
         }
         if (video_stream_provider_type == "videofile" &&
-            frame_counter == cap->get(CV_CAP_PROP_FRAME_COUNT)) 
+            frame_counter == cap->get(CV_CAP_PROP_FRAME_COUNT))
         {
             if (loop_videofile)
             {
@@ -199,7 +204,7 @@ virtual void do_publish(const ros::TimerEvent& event) {
           else if (flip_vertical)
             cv::flip(frame, frame, 0);
         }
-        msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
+        msg = cv_bridge::CvImage(header, output_pixel_encoding, frame).toImageMsg();
         // Create a default camera info if we didn't get a stored one on initialization
         if (cam_info_msg.distortion_model == ""){
             NODELET_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
@@ -377,6 +382,15 @@ virtual void configCallback(VideoStreamConfig& config, uint32_t level) {
 
     loop_videofile = config.loop_videofile;
     reopen_on_read_failure = config.reopen_on_read_failure;
+    output_pixel_encoding = config.output_pixel_encoding;
+
+    NODELET_INFO_STREAM("The output pixel encoding is: " << output_pixel_encoding);
+    if (output_pixel_encoding == "rgb8") {
+      //this doesn't appear to work - do the conversion within capture
+      //cap->set(CV_CAP_PROP_CONVERT_RGB, 1.0);
+    } else if (output_pixel_encoding != "bgr8") {
+      NODELET_WARN_STREAM("The output pixel encoding is unsupported");
+    }
 
     if (subscriber_num > 0 && need_resubscribe) {
       unsubscribe();
