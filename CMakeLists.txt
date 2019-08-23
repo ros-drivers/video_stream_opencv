@@ -36,8 +36,10 @@ add_executable(video_stream_node src/video_stream_node.cpp)
 target_link_libraries(video_stream_node ${catkin_LIBRARIES})
 set_target_properties(video_stream_node PROPERTIES OUTPUT_NAME video_stream)
 
-install(TARGETS video_stream_node
-    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+install(TARGETS video_stream_node ${PROJECT_NAME}
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(PROGRAMS
   scripts/test_video_resource.py
