@@ -47,7 +47,7 @@ install(PROGRAMS
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(DIRECTORY launch
+install(DIRECTORY launch test
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
 
 install(FILES nodelet_plugins.xml
