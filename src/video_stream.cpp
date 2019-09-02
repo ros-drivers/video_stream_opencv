@@ -196,7 +196,19 @@ virtual void do_publish(const ros::TimerEvent& event) {
           else if (latest_config.flip_vertical)
             cv::flip(frame, frame, 0);
         }
-        msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
+        cv_bridge::CvImagePtr cv_image =
+          boost::make_shared<cv_bridge::CvImage>(header, "bgr8", frame);
+        if (latest_config.output_encoding != "bgr8")
+        {
+          try {
+            // https://github.com/ros-perception/vision_opencv/blob/melodic/cv_bridge/include/cv_bridge/cv_bridge.h#L247
+            cv_image = cv_bridge::cvtColor(cv_image, latest_config.output_encoding);
+          } catch (std::runtime_error &ex) {
+            NODELET_ERROR_STREAM("cannot change encoding to " << latest_config.output_encoding
+                                 << ": " << ex.what());
+          }
+        }
+        msg = cv_image->toImageMsg();
         // Create a default camera info if we didn't get a stored one on initialization
         if (cam_info_msg.distortion_model == ""){
             NODELET_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
