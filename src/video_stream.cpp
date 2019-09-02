@@ -201,6 +201,7 @@ virtual void do_publish(const ros::TimerEvent& event) {
         if (latest_config.output_encoding != "bgr8")
         {
           try {
+            // https://github.com/ros-perception/vision_opencv/blob/melodic/cv_bridge/include/cv_bridge/cv_bridge.h#L247
             cv_image = cv_bridge::cvtColor(cv_image, latest_config.output_encoding);
           } catch (std::runtime_error &ex) {
             NODELET_ERROR_STREAM("cannot change encoding to " << latest_config.output_encoding
