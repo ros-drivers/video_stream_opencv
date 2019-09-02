@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(video_stream_opencv)
-add_definitions(
-    -std=c++11
-)
+add_definitions(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -12,8 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   camera_info_manager
   sensor_msgs
   nodelet
-  dynamic_reconfigure
-)
+  dynamic_reconfigure)
 
 
 find_package(OpenCV)
@@ -25,8 +22,7 @@ catkin_package()
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
-)
+  ${OpenCV_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} SHARED src/video_stream.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
@@ -43,9 +39,7 @@ install(TARGETS video_stream_node ${PROJECT_NAME}
 
 install(PROGRAMS
   scripts/test_video_resource.py
-
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch test
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
@@ -55,11 +49,7 @@ install(FILES nodelet_plugins.xml
 
 if (CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  catkin_download_test_data(small.mp4
-    http://techslides.com/demos/sample-videos/small.mp4
-    DESTINATION ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_SHARE_DESTINATION}/test
-    MD5 a3ac7ddabb263c2d00b73e8177d15c8d)
-  add_rostest(test/test_video_file.test DEPENDENCIES small.mp4)
-  add_rostest(test/test_mjpg_stream.test DEPENDENCIES small.mp4)
+  add_rostest(test/test_video_file.test)
+  add_rostest(test/test_mjpg_stream.test)
   add_rostest(test/test_rtsp_stream.test)
 endif()
