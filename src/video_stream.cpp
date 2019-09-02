@@ -60,26 +60,15 @@ protected:
 boost::shared_ptr<ros::NodeHandle> nh, pnh;
 image_transport::CameraPublisher pub;
 boost::shared_ptr<dynamic_reconfigure::Server<VideoStreamConfig> > dyn_srv;
-std::mutex q_mutex, s_mutex;
+VideoStreamConfig config;
+std::mutex q_mutex, s_mutex, c_mutex, p_mutex;
 std::queue<cv::Mat> framesQueue;
 cv::Mat frame;
 boost::shared_ptr<cv::VideoCapture> cap;
 std::string video_stream_provider;
 std::string video_stream_provider_type;
-std::string camera_name;
-std::string camera_info_url;
-std::string frame_id;
-double set_camera_fps;
-double fps;
-int max_queue_size;
-bool loop_videofile;
 int subscriber_num;
-int width_target;
-int height_target;
-bool flip_horizontal;
-bool flip_vertical;
 bool capture_thread_running;
-bool reopen_on_read_failure;
 boost::thread capture_thread;
 ros::Timer publish_timer;
 sensor_msgs::CameraInfo cam_info_msg;
@@ -117,12 +106,17 @@ virtual sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::
 virtual void do_capture() {
     NODELET_DEBUG("Capture thread started");
     cv::Mat frame;
-    ros::Rate camera_fps_rate(set_camera_fps);
+    VideoStreamConfig latest_config = config;
+    ros::Rate camera_fps_rate(latest_config.set_camera_fps);
 
     int frame_counter = 0;
     // Read frames as fast as possible
     capture_thread_running = true;
     while (nh->ok() && capture_thread_running && subscriber_num > 0) {
+        {
+          std::lock_guard<std::mutex> lock(c_mutex);
+          latest_config = config;
+        }
         if (!cap->isOpened()) {
           NODELET_WARN("Waiting for device...");
           cv::waitKey(100);
@@ -130,7 +124,7 @@ virtual void do_capture() {
         }
         if (!cap->read(frame)) {
           NODELET_ERROR("Could not capture frame");
-          if (reopen_on_read_failure) {
+          if (latest_config.reopen_on_read_failure) {
             NODELET_WARN("trying to reopen the device");
             unsubscribe();
             subscribe();
@@ -143,9 +137,9 @@ virtual void do_capture() {
             camera_fps_rate.sleep();
         }
         if (video_stream_provider_type == "videofile" &&
-            frame_counter == cap->get(CV_CAP_PROP_FRAME_COUNT)) 
+            frame_counter == cap->get(CV_CAP_PROP_FRAME_COUNT))
         {
-            if (loop_videofile)
+            if (latest_config.loop_videofile)
             {
                 cap->open(video_stream_provider);
                 frame_counter = 0;
@@ -159,14 +153,10 @@ virtual void do_capture() {
         if(!frame.empty()) {
             std::lock_guard<std::mutex> g(q_mutex);
             // accumulate only until max_queue_size
-            if (framesQueue.size() < max_queue_size) {
-                framesQueue.push(frame.clone());
+            while (framesQueue.size() > latest_config.buffer_queue_size) {
+              framesQueue.pop();
             }
-            // once reached, drop the oldest frame
-            else {
-                framesQueue.pop();
-                framesQueue.push(frame.clone());
-            }
+            framesQueue.push(frame.clone());
         }
     }
     NODELET_DEBUG("Capture thread finished");
@@ -176,7 +166,14 @@ virtual void do_publish(const ros::TimerEvent& event) {
     bool is_new_image = false;
     sensor_msgs::ImagePtr msg;
     std_msgs::Header header;
-    header.frame_id = frame_id;
+    VideoStreamConfig latest_config;
+
+    {
+      std::lock_guard<std::mutex> lock(p_mutex);
+      latest_config = config;
+    }
+
+    header.frame_id = latest_config.frame_id;
     {
         std::lock_guard<std::mutex> g(q_mutex);
         if (!framesQueue.empty()){
@@ -192,11 +189,11 @@ virtual void do_publish(const ros::TimerEvent& event) {
         // FLIP_HORIZONTAL == 1, FLIP_VERTICAL == 0 or FLIP_BOTH == -1
         // Flip the image if necessary
         if (is_new_image){
-          if (flip_horizontal && flip_vertical)
+          if (latest_config.flip_horizontal && latest_config.flip_vertical)
             cv::flip(frame, frame, -1);
-          else if (flip_horizontal)
+          else if (latest_config.flip_horizontal)
             cv::flip(frame, frame, 1);
-          else if (flip_vertical)
+          else if (latest_config.flip_vertical)
             cv::flip(frame, frame, 0);
         }
         msg = cv_bridge::CvImage(header, "bgr8", frame).toImageMsg();
@@ -204,7 +201,6 @@ virtual void do_publish(const ros::TimerEvent& event) {
         if (cam_info_msg.distortion_model == ""){
             NODELET_WARN_STREAM("No calibration file given, publishing a reasonable default camera info.");
             cam_info_msg = get_default_camera_info_from_image(msg);
-            // cam_info_manager.setCameraInfo(cam_info_msg);
         }
         // The timestamps are in sync thanks to this publisher
         pub.publish(*msg, cam_info_msg, ros::Time::now());
@@ -213,6 +209,15 @@ virtual void do_publish(const ros::TimerEvent& event) {
 
 virtual void subscribe() {
   ROS_DEBUG("Subscribe");
+  VideoStreamConfig latest_config = config;
+  // initialize camera info publisher
+  camera_info_manager::CameraInfoManager cam_info_manager(
+      *nh, latest_config.camera_name, latest_config.camera_info_url);
+  // Get the saved camera info if any
+  cam_info_msg = cam_info_manager.getCameraInfo();
+  cam_info_msg.header.frame_id = latest_config.frame_id;
+
+  // initialize camera
   cap.reset(new cv::VideoCapture);
   try {
     int device_num = std::stoi(video_stream_provider);
@@ -237,21 +242,34 @@ virtual void subscribe() {
   else
     NODELET_INFO_STREAM("Backend can't provide camera FPS information");
 
-  cap->set(CV_CAP_PROP_FPS, set_camera_fps);
+  cap->set(CV_CAP_PROP_FPS, latest_config.set_camera_fps);
   if(!cap->isOpened()){
     NODELET_ERROR_STREAM("Could not open the stream.");
     return;
   }
-  if (width_target != 0 && height_target != 0){
-    cap->set(CV_CAP_PROP_FRAME_WIDTH, width_target);
-    cap->set(CV_CAP_PROP_FRAME_HEIGHT, height_target);
+  if (latest_config.width != 0 && latest_config.height != 0){
+    cap->set(CV_CAP_PROP_FRAME_WIDTH, latest_config.width);
+    cap->set(CV_CAP_PROP_FRAME_HEIGHT, latest_config.height);
+  }
+
+  cap->set(CV_CAP_PROP_BRIGHTNESS, latest_config.brightness);
+  cap->set(CV_CAP_PROP_CONTRAST, latest_config.contrast);
+  cap->set(CV_CAP_PROP_HUE, latest_config.hue);
+  cap->set(CV_CAP_PROP_SATURATION, latest_config.saturation);
+
+  if (latest_config.auto_exposure) {
+    cap->set(CV_CAP_PROP_AUTO_EXPOSURE, 0.75);
+    latest_config.exposure = 0.5;
+  } else {
+    cap->set(CV_CAP_PROP_AUTO_EXPOSURE, 0.25);
+    cap->set(CV_CAP_PROP_EXPOSURE, latest_config.exposure);
   }
 
   try {
     capture_thread = boost::thread(
       boost::bind(&VideoStreamNodelet::do_capture, this));
     publish_timer = nh->createTimer(
-      ros::Duration(1.0 / fps), &VideoStreamNodelet::do_publish, this);
+      ros::Duration(1.0 / latest_config.fps), &VideoStreamNodelet::do_publish, this);
   } catch (std::exception& e) {
     NODELET_ERROR_STREAM("Failed to start capture thread: " << e.what());
   }
@@ -303,85 +321,43 @@ virtual void infoDisconnectionCallback(const ros::SingleSubscriberPublisher&) {
   disconnectionCallbackImpl();
 }
 
-virtual void configCallback(VideoStreamConfig& config, uint32_t level) {
-    NODELET_DEBUG("configCallback");
-    bool need_resubscribe = false;
+virtual void configCallback(VideoStreamConfig& new_config, uint32_t level) {
+  NODELET_DEBUG("configCallback");
 
-    if (camera_name != config.camera_name ||
-        camera_info_url != config.camera_info_url ||
-        frame_id != config.frame_id) {
-      camera_name = config.camera_name;
-      camera_info_url = config.camera_info_url;
-      frame_id = config.frame_id;
-      NODELET_INFO_STREAM("Camera name: " << camera_name);
-      NODELET_INFO_STREAM("Provided camera_info_url: '" << camera_info_url << "'");
-      NODELET_INFO_STREAM("Publishing with frame_id: " << frame_id);
-      camera_info_manager::CameraInfoManager cam_info_manager(*nh, camera_name, camera_info_url);
-      // Get the saved camera info if any
-      cam_info_msg = cam_info_manager.getCameraInfo();
-      cam_info_msg.header.frame_id = frame_id;
-    }
+  if (new_config.fps > new_config.set_camera_fps) {
+    NODELET_WARN_STREAM(
+        "Asked to publish at 'fps' (" << new_config.fps
+        << ") which is higher than the 'set_camera_fps' (" << new_config.set_camera_fps <<
+        "), we can't publish faster than the camera provides images.");
+    new_config.fps = new_config.set_camera_fps;
+  }
 
-    if (set_camera_fps != config.set_camera_fps ||
-        fps != config.fps) {
-      if (config.fps > config.set_camera_fps) {
-        NODELET_WARN_STREAM("Asked to publish at 'fps' (" << config.fps
-                            << ") which is higher than the 'set_camera_fps' (" << config.set_camera_fps <<
-                            "), we can't publish faster than the camera provides images.");
-        config.fps = config.set_camera_fps;
-      }
-      set_camera_fps = config.set_camera_fps;
-      fps = config.fps;
-      NODELET_INFO_STREAM("Setting camera FPS to: " << set_camera_fps);
-      NODELET_INFO_STREAM("Throttling to fps: " << fps);
-      need_resubscribe = true;
-    }
+  {
+    std::lock_guard<std::mutex> c_lock(c_mutex);
+    std::lock_guard<std::mutex> p_lock(p_mutex);
+    config = new_config;
+  }
 
-    if (max_queue_size != config.buffer_queue_size) {
-      max_queue_size = config.buffer_queue_size;
-      NODELET_INFO_STREAM("Setting buffer size for capturing frames to: " << max_queue_size);
-    }
+  // show current configuration
+  NODELET_INFO_STREAM("Camera name: " << new_config.camera_name);
+  NODELET_INFO_STREAM("Provided camera_info_url: '" << new_config.camera_info_url << "'");
+  NODELET_INFO_STREAM("Publishing with frame_id: " << new_config.frame_id);
+  NODELET_INFO_STREAM("Setting camera FPS to: " << new_config.set_camera_fps);
+  NODELET_INFO_STREAM("Throttling to fps: " << new_config.fps);
+  NODELET_INFO_STREAM("Setting buffer size for capturing frames to: " << new_config.buffer_queue_size);
+  NODELET_INFO_STREAM("Flip horizontal image is: " << ((new_config.flip_horizontal)?"true":"false"));
+  NODELET_INFO_STREAM("Flip vertical image is: " << ((new_config.flip_vertical)?"true":"false"));
+  if (new_config.width != 0 && new_config.height != 0)
+  {
+    NODELET_INFO_STREAM("Forced image width is: " << new_config.width);
+    NODELET_INFO_STREAM("Forced image height is: " << new_config.height);
+  }
 
-    if (flip_horizontal != config.flip_horizontal ||
-        flip_vertical != config.flip_vertical) {
-      flip_horizontal = config.flip_horizontal;
-      flip_vertical = config.flip_vertical;
-      NODELET_INFO_STREAM("Flip horizontal image is: " << ((flip_horizontal)?"true":"false"));
-      NODELET_INFO_STREAM("Flip vertical image is: " << ((flip_vertical)?"true":"false"));
-    }
-
-    if (width_target != config.width ||
-        height_target != config.height) {
-      width_target = config.width;
-      height_target = config.height;
-      if (width_target != 0 && height_target != 0) {
-        NODELET_INFO_STREAM("Forced image width is: " << width_target);
-        NODELET_INFO_STREAM("Forced image height is: " << height_target);
-      }
-      need_resubscribe = true;
-    }
-
-    if (cap && cap->isOpened()) {
-      cap->set(CV_CAP_PROP_BRIGHTNESS, config.brightness);
-      cap->set(CV_CAP_PROP_CONTRAST, config.contrast);
-      cap->set(CV_CAP_PROP_HUE, config.hue);
-      cap->set(CV_CAP_PROP_SATURATION, config.saturation);
-      if (config.auto_exposure) {
-        cap->set(CV_CAP_PROP_AUTO_EXPOSURE, 0.75);
-        config.exposure = 0.5;
-      } else {
-        cap->set(CV_CAP_PROP_AUTO_EXPOSURE, 0.25);
-        cap->set(CV_CAP_PROP_EXPOSURE, config.exposure);
-      }
-    }
-
-    loop_videofile = config.loop_videofile;
-    reopen_on_read_failure = config.reopen_on_read_failure;
-
-    if (subscriber_num > 0 && need_resubscribe) {
-      unsubscribe();
-      subscribe();
-    }
+  if (subscriber_num > 0 && (level & 0x1))
+  {
+    unsubscribe();
+    subscribe();
+  }
 }
 
 virtual void onInit() {
