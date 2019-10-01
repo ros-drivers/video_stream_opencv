@@ -297,8 +297,8 @@ virtual void unsubscribe() {
 
 virtual void connectionCallbackImpl() {
   std::lock_guard<std::mutex> lock(s_mutex);
-  if (subscriber_num == 0) {
-    subscriber_num++;
+  subscriber_num++;
+  if (subscriber_num == 1) {
     subscribe();
   }
 }
