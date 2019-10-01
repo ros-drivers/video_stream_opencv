@@ -423,8 +423,8 @@ virtual void onInit() {
       boost::bind(&VideoStreamNodelet::infoDisconnectionCallback, this, _1);
     pub = image_transport::ImageTransport(*nh).advertiseCamera(
       "image_raw", 1,
-      connect_cb, connect_cb,
-      info_connect_cb, info_connect_cb,
+      connect_cb, disconnect_cb,
+      info_connect_cb, info_disconnect_cb,
       ros::VoidPtr(), false);
 }
 
