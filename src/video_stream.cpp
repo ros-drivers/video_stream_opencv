@@ -297,8 +297,8 @@ virtual void unsubscribe() {
 
 virtual void connectionCallbackImpl() {
   std::lock_guard<std::mutex> lock(s_mutex);
-  if (subscriber_num == 0) {
-    subscriber_num++;
+  subscriber_num++;
+  if (subscriber_num == 1) {
     subscribe();
   }
 }
@@ -423,8 +423,8 @@ virtual void onInit() {
       boost::bind(&VideoStreamNodelet::infoDisconnectionCallback, this, _1);
     pub = image_transport::ImageTransport(*nh).advertiseCamera(
       "image_raw", 1,
-      connect_cb, connect_cb,
-      info_connect_cb, info_connect_cb,
+      connect_cb, disconnect_cb,
+      info_connect_cb, info_disconnect_cb,
       ros::VoidPtr(), false);
 }
 
