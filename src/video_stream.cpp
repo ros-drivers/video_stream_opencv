@@ -137,7 +137,7 @@ virtual void do_capture() {
             camera_fps_rate.sleep();
         }
         if (video_stream_provider_type == "videofile" &&
-            frame_counter == cap->get(CV_CAP_PROP_FRAME_COUNT))
+            frame_counter == cap->get(cv::CAP_PROP_FRAME_COUNT))
         {
             if (latest_config.loop_videofile)
             {
@@ -248,33 +248,33 @@ virtual void subscribe() {
   double reported_camera_fps;
   // OpenCV 2.4 returns -1 (instead of a 0 as the spec says) and prompts an error
   // HIGHGUI ERROR: V4L2: Unable to get property <unknown property string>(5) - Invalid argument
-  reported_camera_fps = cap->get(CV_CAP_PROP_FPS);
+  reported_camera_fps = cap->get(cv::CAP_PROP_FPS);
   if (reported_camera_fps > 0.0)
     NODELET_INFO_STREAM("Camera reports FPS: " << reported_camera_fps);
   else
     NODELET_INFO_STREAM("Backend can't provide camera FPS information");
 
-  cap->set(CV_CAP_PROP_FPS, latest_config.set_camera_fps);
+  cap->set(cv::CAP_PROP_FPS, latest_config.set_camera_fps);
   if(!cap->isOpened()){
     NODELET_ERROR_STREAM("Could not open the stream.");
     return;
   }
   if (latest_config.width != 0 && latest_config.height != 0){
-    cap->set(CV_CAP_PROP_FRAME_WIDTH, latest_config.width);
-    cap->set(CV_CAP_PROP_FRAME_HEIGHT, latest_config.height);
+    cap->set(cv::CAP_PROP_FRAME_WIDTH, latest_config.width);
+    cap->set(cv::CAP_PROP_FRAME_HEIGHT, latest_config.height);
   }
 
-  cap->set(CV_CAP_PROP_BRIGHTNESS, latest_config.brightness);
-  cap->set(CV_CAP_PROP_CONTRAST, latest_config.contrast);
-  cap->set(CV_CAP_PROP_HUE, latest_config.hue);
-  cap->set(CV_CAP_PROP_SATURATION, latest_config.saturation);
+  cap->set(cv::CAP_PROP_BRIGHTNESS, latest_config.brightness);
+  cap->set(cv::CAP_PROP_CONTRAST, latest_config.contrast);
+  cap->set(cv::CAP_PROP_HUE, latest_config.hue);
+  cap->set(cv::CAP_PROP_SATURATION, latest_config.saturation);
 
   if (latest_config.auto_exposure) {
-    cap->set(CV_CAP_PROP_AUTO_EXPOSURE, 0.75);
+    cap->set(cv::CAP_PROP_AUTO_EXPOSURE, 0.75);
     latest_config.exposure = 0.5;
   } else {
-    cap->set(CV_CAP_PROP_AUTO_EXPOSURE, 0.25);
-    cap->set(CV_CAP_PROP_EXPOSURE, latest_config.exposure);
+    cap->set(cv::CAP_PROP_AUTO_EXPOSURE, 0.25);
+    cap->set(cv::CAP_PROP_EXPOSURE, latest_config.exposure);
   }
 
   try {
