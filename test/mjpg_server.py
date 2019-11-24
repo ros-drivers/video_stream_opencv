@@ -72,10 +72,12 @@ class MJPGStreamHandler(BaseHTTPRequestHandler):
                     continue
                 jpg = img.tostring()
                 self.wfile.write('--jpgboundary')
+                self.wfile.write(os.linesep)
                 self.send_header('Content-type', 'image/jpeg')
                 self.send_header('Content-length', str(len(jpg)))
                 self.end_headers()
                 self.wfile.write(jpg)
+                self.wfile.write(os.linesep)
                 time.sleep(1.0 / self.loop_rate)
             except KeyboardInterrupt:
                 break
