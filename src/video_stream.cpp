@@ -220,7 +220,7 @@ virtual void do_publish(const ros::TimerEvent& event) {
     }
 }
 
-virtual void subscribe() {
+virtual bool subscribe() {
   ROS_DEBUG("Subscribe");
   VideoStreamConfig& latest_config = config;
   // initialize camera info publisher
@@ -263,8 +263,8 @@ virtual void subscribe() {
         cap->set(cv::CAP_PROP_POS_FRAMES, latest_config.start_frame);
       }
     if (!cap->isOpened()) {
-      NODELET_FATAL_STREAM("Invalid 'video_stream_provider': " << video_stream_provider);
-      return;
+      NODELET_ERROR_STREAM("Invalid 'video_stream_provider': " << video_stream_provider);
+      return false;
     }
   }
   NODELET_INFO_STREAM("Video stream provider type detected: " << video_stream_provider_type);
@@ -281,7 +281,7 @@ virtual void subscribe() {
   cap->set(cv::CAP_PROP_FPS, latest_config.set_camera_fps);
   if(!cap->isOpened()){
     NODELET_ERROR_STREAM("Could not open the stream.");
-    return;
+    return false;
   }
   if (latest_config.width != 0 && latest_config.height != 0){
     cap->set(cv::CAP_PROP_FRAME_WIDTH, latest_config.width);
@@ -308,14 +308,18 @@ virtual void subscribe() {
       ros::Duration(1.0 / latest_config.fps), &VideoStreamNodelet::do_publish, this);
   } catch (std::exception& e) {
     NODELET_ERROR_STREAM("Failed to start capture thread: " << e.what());
+    return false;
   }
+  return true;
 }
 
 virtual void unsubscribe() {
   ROS_DEBUG("Unsubscribe");
   publish_timer.stop();
   capture_thread_running = false;
-  capture_thread.join();
+  if (capture_thread_running) {
+    capture_thread.join();
+  }
   cap.reset();
 }
 
@@ -323,7 +327,13 @@ virtual void connectionCallbackImpl() {
   std::lock_guard<std::mutex> lock(s_mutex);
   subscriber_num++;
   if (subscriber_num == 1) {
-    subscribe();
+    if (!subscribe()) {
+      subscriber_num--;
+      ROS_DEBUG("not subscribed");
+    }
+    else {
+      ROS_DEBUG("subscribed");
+    }
   }
 }
 
@@ -335,9 +345,11 @@ virtual void disconnectionCallbackImpl() {
     return;
   }
 
-  subscriber_num--;
-  if (subscriber_num == 0) {
-    unsubscribe();
+  if (subscriber_num > 0) {
+    subscriber_num--;
+    if (subscriber_num == 0) {
+      unsubscribe();
+    }
   }
 }
 
@@ -444,7 +456,6 @@ virtual void onInit() {
     auto f = boost::bind(&VideoStreamNodelet::configCallback, this, _1, _2);
     dyn_srv->setCallback(f);
 
-    subscriber_num = 0;
     image_transport::SubscriberStatusCallback connect_cb =
       boost::bind(&VideoStreamNodelet::connectionCallback, this, _1);
     ros::SubscriberStatusCallback info_connect_cb =
