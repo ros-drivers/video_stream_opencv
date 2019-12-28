@@ -24,8 +24,11 @@
     <arg name="height" default="0"/>
     <!-- enable looping playback, only if video_stream_provider is a video file -->
     <arg name="loop_videofile" default="false" />
-  	<!-- if show a image_view window subscribed to the generated stream -->
+    <arg name="start_frame" default="0"/>
+    <arg name="stop_frame" default="-1"/>
+    <!-- if show a image_view window subscribed to the generated stream -->
 	<arg name="visualize" default="false"/>
+
 
    
    	<!-- images will be published at /camera_name/image with the image transports plugins (e.g.: compressed) installed -->
@@ -41,7 +44,9 @@
 	        <param name="camera_info_url" type="string" value="$(arg camera_info_url)" />
 	        <param name="flip_horizontal" type="bool" value="$(arg flip_horizontal)" />
 	        <param name="flip_vertical" type="bool" value="$(arg flip_vertical)" />
-          <param name="loop_videofile" type="bool" value="$(arg loop_videofile)" />
+                <param name="loop_videofile" type="bool" value="$(arg loop_videofile)" />
+                <param name="start_frame" type="int" value="$(arg start_frame)" />
+                <param name="stop_frame" type="int" value="$(arg stop_frame)" />
 	        <param name="width" type="int" value="$(arg width)" />
 	        <param name="height" type="int" value="$(arg height)" />
 	    </node>

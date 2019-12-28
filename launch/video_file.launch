@@ -24,6 +24,10 @@
         <arg name="flip_vertical" value="false" />
         <!-- enable looping playback -->
         <arg name="loop_videofile" value="true" />
+        <!-- start frame of video -->
+        <arg name="start_frame" default="0"/>
+        <!-- stop frame of video, -1 means the end of video -->
+        <arg name="stop_frame" default="-1"/>
         <!-- visualize on an image_view window the stream generated -->
         <arg name="visualize" value="true" />
    </include>
