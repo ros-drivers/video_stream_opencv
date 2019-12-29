@@ -241,13 +241,20 @@ virtual void subscribe() {
     cap->open(video_stream_provider);
     if(video_stream_provider_type == "videofile" )
       {
-        cap->set(cv::CAP_PROP_POS_FRAMES, latest_config.start_frame);
         if(latest_config.stop_frame == -1) latest_config.stop_frame = cap->get(cv::CAP_PROP_FRAME_COUNT);
         if(latest_config.stop_frame > cap->get(cv::CAP_PROP_FRAME_COUNT))
           {
-            NODELET_WARN_STREAM("Invalid 'stop frame'" << latest_config.stop_frame << "for video which has " << cap->get(cv::CAP_PROP_FRAME_COUNT) << "frames.");
+            NODELET_WARN_STREAM("Invalid 'stop frame' " << latest_config.stop_frame << " for video which has " << cap->get(cv::CAP_PROP_FRAME_COUNT) << " frames. Set 'stop frame' to " << cap->get(cv::CAP_PROP_FRAME_COUNT) << ".");
             latest_config.stop_frame = cap->get(cv::CAP_PROP_FRAME_COUNT);
           }
+
+        if(latest_config.start_frame >= latest_config.stop_frame)
+          {
+            NODELET_WARN_STREAM("Invalid 'start frame' " << latest_config.start_frame << ", which excceds 'stop frame' " << latest_config.stop_frame << ". Set 'start frame' to 0.");
+            latest_config.start_frame = 0;
+          }
+
+        cap->set(cv::CAP_PROP_POS_FRAMES, latest_config.start_frame);
       }
     if (!cap->isOpened()) {
       NODELET_FATAL_STREAM("Invalid 'video_stream_provider': " << video_stream_provider);

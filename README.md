@@ -83,7 +83,7 @@ If you want to publish all images (don't drop any and you don't mind some possib
  * `loop_videofile`: if the provider is a video file, enable loop playback.
  * `width` and `height`: force a width and height to the capturing device (if it allows), 0 means no forcing.
  * `start_frame`: if the provider is a video file, set the start frame of video.
- * `stop_frame`: if the provider is a video file, set the stop frame of video. `-1` means the end of the video.
+ * `stop_frame`: if the provider is a video file, set the stop frame of video. `-1` means the end of the video. Also setting `stop_frame = start_frame + 1`  can publish a single frame with a certain rate.
 
 # Extras
 
