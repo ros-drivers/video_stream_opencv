@@ -137,11 +137,12 @@ virtual void do_capture() {
             camera_fps_rate.sleep();
         }
         if (video_stream_provider_type == "videofile" &&
-            frame_counter == cap->get(cv::CAP_PROP_FRAME_COUNT))
+            frame_counter == latest_config.stop_frame - latest_config.start_frame)
         {
             if (latest_config.loop_videofile)
             {
                 cap->open(video_stream_provider);
+                cap->set(cv::CAP_PROP_POS_FRAMES, latest_config.start_frame);
                 frame_counter = 0;
             }
             else {
@@ -238,6 +239,23 @@ virtual void subscribe() {
   } catch (std::invalid_argument &ex) {
     NODELET_INFO_STREAM("Opening VideoCapture with provider: " << video_stream_provider);
     cap->open(video_stream_provider);
+    if(video_stream_provider_type == "videofile" )
+      {
+        if(latest_config.stop_frame == -1) latest_config.stop_frame = cap->get(cv::CAP_PROP_FRAME_COUNT);
+        if(latest_config.stop_frame > cap->get(cv::CAP_PROP_FRAME_COUNT))
+          {
+            NODELET_WARN_STREAM("Invalid 'stop frame' " << latest_config.stop_frame << " for video which has " << cap->get(cv::CAP_PROP_FRAME_COUNT) << " frames. Set 'stop frame' to " << cap->get(cv::CAP_PROP_FRAME_COUNT) << ".");
+            latest_config.stop_frame = cap->get(cv::CAP_PROP_FRAME_COUNT);
+          }
+
+        if(latest_config.start_frame >= latest_config.stop_frame)
+          {
+            NODELET_WARN_STREAM("Invalid 'start frame' " << latest_config.start_frame << ", which excceds 'stop frame' " << latest_config.stop_frame << ". Set 'start frame' to 0.");
+            latest_config.start_frame = 0;
+          }
+
+        cap->set(cv::CAP_PROP_POS_FRAMES, latest_config.start_frame);
+      }
     if (!cap->isOpened()) {
       NODELET_FATAL_STREAM("Invalid 'video_stream_provider': " << video_stream_provider);
       return;
@@ -359,6 +377,9 @@ virtual void configCallback(VideoStreamConfig& new_config, uint32_t level) {
   NODELET_INFO_STREAM("Setting buffer size for capturing frames to: " << new_config.buffer_queue_size);
   NODELET_INFO_STREAM("Flip horizontal image is: " << ((new_config.flip_horizontal)?"true":"false"));
   NODELET_INFO_STREAM("Flip vertical image is: " << ((new_config.flip_vertical)?"true":"false"));
+  NODELET_INFO_STREAM("Video start frame is: " << new_config.start_frame);
+  NODELET_INFO_STREAM("Video stop frame is: " << new_config.stop_frame);
+
   if (new_config.width != 0 && new_config.height != 0)
   {
     NODELET_INFO_STREAM("Forced image width is: " << new_config.width);
