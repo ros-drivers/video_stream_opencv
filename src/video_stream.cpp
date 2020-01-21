@@ -105,7 +105,7 @@ virtual sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::
 
 virtual void do_capture() {
     NODELET_DEBUG("Capture thread started");
-    cv::Mat frame;
+    cv::Mat capture_frame;
     VideoStreamConfig latest_config = config;
     ros::Rate camera_fps_rate(latest_config.set_camera_fps);
 
@@ -122,7 +122,7 @@ virtual void do_capture() {
           cv::waitKey(100);
           continue;
         }
-        if (!cap->read(frame)) {
+        if (!cap->read(capture_frame)) {
           NODELET_ERROR_STREAM_THROTTLE(1.0, "Could not capture frame (frame_counter: " << frame_counter << ")");
           if (latest_config.reopen_on_read_failure) {
             NODELET_WARN_STREAM_THROTTLE(1.0, "trying to reopen the device");
@@ -153,13 +153,13 @@ virtual void do_capture() {
             }
         }
 
-        if(!frame.empty()) {
+        if(!capture_frame.empty()) {
             std::lock_guard<std::mutex> g(q_mutex);
             // accumulate only until max_queue_size
             while (framesQueue.size() >= latest_config.buffer_queue_size) {
               framesQueue.pop();
             }
-            framesQueue.push(frame.clone());
+            framesQueue.push(capture_frame.clone());
         }
     }
     NODELET_DEBUG("Capture thread finished");
@@ -316,11 +316,15 @@ virtual bool subscribe() {
 virtual void unsubscribe() {
   ROS_DEBUG("Unsubscribe");
   publish_timer.stop();
-  capture_thread_running = false;
   if (capture_thread_running) {
+    capture_thread_running = false;
     capture_thread.join();
   }
   cap.reset();
+  frame = cv::Mat();
+  while (!framesQueue.empty()) {
+    framesQueue.pop();
+  }
 }
 
 virtual void connectionCallbackImpl() {
@@ -339,9 +343,11 @@ virtual void connectionCallbackImpl() {
 
 virtual void disconnectionCallbackImpl() {
   std::lock_guard<std::mutex> lock(s_mutex);
-  bool always_subscribe = false;
-  pnh->getParamCached("always_subscribe", always_subscribe);
-  if (video_stream_provider == "videofile" || always_subscribe) {
+  bool always_subscribe;
+  if (!pnh->getParamCached("always_subscribe", always_subscribe)) {
+    always_subscribe = false;
+  }
+  if (always_subscribe) {
     return;
   }
 
