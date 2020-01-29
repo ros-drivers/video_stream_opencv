@@ -63,6 +63,7 @@ boost::shared_ptr<dynamic_reconfigure::Server<VideoStreamConfig> > dyn_srv;
 VideoStreamConfig config;
 std::mutex q_mutex, s_mutex, c_mutex, p_mutex;
 std::queue<cv::Mat> framesQueue;
+bool has_captured;
 cv::Mat frame;
 boost::shared_ptr<cv::VideoCapture> cap;
 std::string video_stream_provider;
@@ -165,6 +166,7 @@ virtual void do_capture() {
               framesQueue.pop();
             }
             framesQueue.push(capture_frame.clone());
+            has_captured = true;
         }
     }
     NODELET_DEBUG("Capture thread finished");
@@ -172,6 +174,7 @@ virtual void do_capture() {
 
 virtual void do_publish(const ros::TimerEvent& event) {
     bool is_new_image = false;
+    bool ready_to_publish = false;
     sensor_msgs::ImagePtr msg;
     std_msgs::Header header;
     VideoStreamConfig latest_config;
@@ -189,10 +192,11 @@ virtual void do_publish(const ros::TimerEvent& event) {
             framesQueue.pop();
             is_new_image = true;
         }
+        ready_to_publish = !frame.empty() && has_captured;
     }
 
     // Check if grabbed frame is actually filled with some content
-    if(!frame.empty() && is_new_image) {
+    if(ready_to_publish && is_new_image) {
         // From http://docs.opencv.org/modules/core/doc/operations_on_arrays.html#void flip(InputArray src, OutputArray dst, int flipCode)
         // FLIP_HORIZONTAL == 1, FLIP_VERTICAL == 0 or FLIP_BOTH == -1
         // Flip the image if necessary
@@ -306,6 +310,15 @@ virtual bool subscribe() {
     cap->set(cv::CAP_PROP_EXPOSURE, latest_config.exposure);
   }
 
+  // cleanup previous session
+  {
+    std::lock_guard<std::mutex> g(q_mutex);
+    while (!framesQueue.empty()) {
+      framesQueue.pop();
+    }
+    has_captured = false;
+  }
+
   try {
     capture_thread = boost::thread(
       boost::bind(&VideoStreamNodelet::do_capture, this));
@@ -326,10 +339,6 @@ virtual void unsubscribe() {
     capture_thread.join();
   }
   cap.reset();
-  frame = cv::Mat();
-  while (!framesQueue.empty()) {
-    framesQueue.pop();
-  }
 }
 
 virtual void connectionCallbackImpl() {
