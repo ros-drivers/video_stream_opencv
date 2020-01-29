@@ -269,6 +269,10 @@ virtual void subscribe() {
   }
   NODELET_INFO_STREAM("Video stream provider type detected: " << video_stream_provider_type);
 
+  if (latest_config.enable_mjpg) {
+    cap->set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
+  }
+
   double reported_camera_fps;
   // OpenCV 2.4 returns -1 (instead of a 0 as the spec says) and prompts an error
   // HIGHGUI ERROR: V4L2: Unable to get property <unknown property string>(5) - Invalid argument
@@ -390,6 +394,10 @@ virtual void configCallback(VideoStreamConfig& new_config, uint32_t level) {
   {
     NODELET_INFO_STREAM("Forced image width is: " << new_config.width);
     NODELET_INFO_STREAM("Forced image height is: " << new_config.height);
+  }
+  if (new_config.enable_mjpg)
+  {
+    NODELET_INFO_STREAM("Trying to use MJPG camera stream.");
   }
 
   NODELET_DEBUG_STREAM("subscriber_num: " << subscriber_num << " and level: " << level);
