@@ -122,13 +122,18 @@ virtual void do_capture() {
           cv::waitKey(100);
           continue;
         }
-        if (!cap->read(capture_frame)) {
-          NODELET_ERROR_STREAM_THROTTLE(1.0, "Could not capture frame (frame_counter: " << frame_counter << ")");
-          if (latest_config.reopen_on_read_failure) {
-            NODELET_WARN_STREAM_THROTTLE(1.0, "trying to reopen the device");
-            unsubscribe();
-            subscribe();
+        try {
+          if (!cap->read(capture_frame)) {
+            NODELET_ERROR_STREAM_THROTTLE(1.0, "Could not capture frame (frame_counter: " << frame_counter << ")");
+            if (latest_config.reopen_on_read_failure) {
+              NODELET_WARN_STREAM_THROTTLE(1.0, "trying to reopen the device");
+              unsubscribe();
+              subscribe();
+            }
           }
+        } catch (const cv::Exception &e) {
+            NODELET_WARN("Error reading frame");
+            continue;
         }
 
         frame_counter++;
