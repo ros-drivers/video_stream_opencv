@@ -373,22 +373,6 @@ virtual void disconnectionCallbackImpl() {
   }
 }
 
-virtual void connectionCallback(const image_transport::SingleSubscriberPublisher&) {
-  connectionCallbackImpl();
-}
-
-virtual void infoConnectionCallback(const ros::SingleSubscriberPublisher&) {
-  connectionCallbackImpl();
-}
-
-virtual void disconnectionCallback(const image_transport::SingleSubscriberPublisher&) {
-  disconnectionCallbackImpl();
-}
-
-virtual void infoDisconnectionCallback(const ros::SingleSubscriberPublisher&) {
-  disconnectionCallbackImpl();
-}
-
 virtual void configCallback(VideoStreamConfig& new_config, uint32_t level) {
   NODELET_DEBUG("configCallback");
 
@@ -477,13 +461,13 @@ virtual void onInit() {
     dyn_srv->setCallback(f);
 
     image_transport::SubscriberStatusCallback connect_cb =
-      boost::bind(&VideoStreamNodelet::connectionCallback, this, _1);
+      boost::bind(&VideoStreamNodelet::connectionCallbackImpl, this);
     ros::SubscriberStatusCallback info_connect_cb =
-      boost::bind(&VideoStreamNodelet::infoConnectionCallback, this, _1);
+      boost::bind(&VideoStreamNodelet::connectionCallbackImpl, this);
     image_transport::SubscriberStatusCallback disconnect_cb =
-      boost::bind(&VideoStreamNodelet::disconnectionCallback, this, _1);
+      boost::bind(&VideoStreamNodelet::disconnectionCallbackImpl, this);
     ros::SubscriberStatusCallback info_disconnect_cb =
-      boost::bind(&VideoStreamNodelet::infoDisconnectionCallback, this, _1);
+      boost::bind(&VideoStreamNodelet::disconnectionCallbackImpl, this);
     pub = image_transport::ImageTransport(*nh).advertiseCamera(
       "image_raw", 1,
       connect_cb, disconnect_cb,
