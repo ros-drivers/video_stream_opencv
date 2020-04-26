@@ -413,7 +413,7 @@ virtual void onInit() {
         video_stream_provider_type = "rtsp_stream";
       }
       else{
-        fs::file_type file_type = fs::status(fs::path(video_stream_provider)).type();
+        fs::file_type file_type = fs::status(fs::canonical(fs::path(video_stream_provider))).type();
         switch (file_type) {
         case fs::file_type::character_file:
         case fs::file_type::block_file:
