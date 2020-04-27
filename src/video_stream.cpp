@@ -222,7 +222,7 @@ virtual void do_publish(const ros::TimerEvent& event) {
 
 virtual void subscribe() {
   ROS_DEBUG("Subscribe");
-  VideoStreamConfig latest_config = config;
+  VideoStreamConfig latest_config& = config;
   // initialize camera info publisher
   camera_info_manager::CameraInfoManager cam_info_manager(
       *nh, latest_config.camera_name, latest_config.camera_info_url);
