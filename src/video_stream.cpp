@@ -136,7 +136,7 @@ virtual void do_capture() {
         {
             camera_fps_rate.sleep();
         }
-        NODELET_INFO_DEBUG("Current frame_counter: " << frame_counter << " latest_config.stop_frame - latest_config.start_frame: " << latest_config.stop_frame - latest_config.start_frame);
+        NODELET_DEBUG_STREAM("Current frame_counter: " << frame_counter << " latest_config.stop_frame - latest_config.start_frame: " << latest_config.stop_frame - latest_config.start_frame);
         if (video_stream_provider_type == "videofile" &&
             frame_counter >= latest_config.stop_frame - latest_config.start_frame)
         {
@@ -145,7 +145,7 @@ virtual void do_capture() {
                 cap->open(video_stream_provider);
                 cap->set(cv::CAP_PROP_POS_FRAMES, latest_config.start_frame);
                 frame_counter = 0;
-                NODELET_INFO_DEBUG("Reached end of frames, looping.");
+                NODELET_DEBUG("Reached end of frames, looping.");
             }
             else {
               NODELET_INFO("Reached the end of frames");
