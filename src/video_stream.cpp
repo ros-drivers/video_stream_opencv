@@ -123,7 +123,7 @@ virtual void do_capture() {
           continue;
         }
         if (!cap->read(frame)) {
-          NODELET_ERROR("Could not capture frame");
+          NODELET_ERROR_STREAM("Could not capture frame (frame_counter: " << frame_counter << ")");
           if (latest_config.reopen_on_read_failure) {
             NODELET_WARN("trying to reopen the device");
             unsubscribe();
@@ -136,14 +136,16 @@ virtual void do_capture() {
         {
             camera_fps_rate.sleep();
         }
+        NODELET_INFO_DEBUG("Current frame_counter: " << frame_counter << " latest_config.stop_frame - latest_config.start_frame: " << latest_config.stop_frame - latest_config.start_frame);
         if (video_stream_provider_type == "videofile" &&
-            frame_counter == latest_config.stop_frame - latest_config.start_frame)
+            frame_counter >= latest_config.stop_frame - latest_config.start_frame)
         {
             if (latest_config.loop_videofile)
             {
                 cap->open(video_stream_provider);
                 cap->set(cv::CAP_PROP_POS_FRAMES, latest_config.start_frame);
                 frame_counter = 0;
+                NODELET_INFO_DEBUG("Reached end of frames, looping.");
             }
             else {
               NODELET_INFO("Reached the end of frames");
@@ -222,7 +224,7 @@ virtual void do_publish(const ros::TimerEvent& event) {
 
 virtual void subscribe() {
   ROS_DEBUG("Subscribe");
-  VideoStreamConfig latest_config = config;
+  VideoStreamConfig& latest_config = config;
   // initialize camera info publisher
   camera_info_manager::CameraInfoManager cam_info_manager(
       *nh, latest_config.camera_name, latest_config.camera_info_url);
@@ -241,16 +243,22 @@ virtual void subscribe() {
     cap->open(video_stream_provider);
     if(video_stream_provider_type == "videofile" )
       {
-        if(latest_config.stop_frame == -1) latest_config.stop_frame = cap->get(cv::CAP_PROP_FRAME_COUNT);
+        // We can only check the number of frames when we actually open the video file
+        NODELET_INFO_STREAM("Video number of frames: " << cap->get(cv::CAP_PROP_FRAME_COUNT));
+        if(latest_config.stop_frame == -1)
+        {
+          NODELET_WARN_STREAM("'stop_frame' set to -1, setting internally (won't be shown in dynamic_reconfigure) to last frame: " << cap->get(cv::CAP_PROP_FRAME_COUNT));
+          latest_config.stop_frame = cap->get(cv::CAP_PROP_FRAME_COUNT);
+        }
         if(latest_config.stop_frame > cap->get(cv::CAP_PROP_FRAME_COUNT))
           {
-            NODELET_WARN_STREAM("Invalid 'stop frame' " << latest_config.stop_frame << " for video which has " << cap->get(cv::CAP_PROP_FRAME_COUNT) << " frames. Set 'stop frame' to " << cap->get(cv::CAP_PROP_FRAME_COUNT) << ".");
+            NODELET_ERROR_STREAM("Invalid 'stop_frame' " << latest_config.stop_frame << " for video which has " << cap->get(cv::CAP_PROP_FRAME_COUNT) << " frames. Setting internally (won't be shown in dynamic_reconfigure) 'stop_frame' to " << cap->get(cv::CAP_PROP_FRAME_COUNT));
             latest_config.stop_frame = cap->get(cv::CAP_PROP_FRAME_COUNT);
           }
 
         if(latest_config.start_frame >= latest_config.stop_frame)
           {
-            NODELET_WARN_STREAM("Invalid 'start frame' " << latest_config.start_frame << ", which excceds 'stop frame' " << latest_config.stop_frame << ". Set 'start frame' to 0.");
+            NODELET_ERROR_STREAM("Invalid 'start_frame' " << latest_config.start_frame << ", which exceeds 'stop_frame' " << latest_config.stop_frame << ". Setting internally (won't be shown in dynamic_reconfigure) 'start_frame' to 0.");
             latest_config.start_frame = 0;
           }
 
@@ -386,8 +394,10 @@ virtual void configCallback(VideoStreamConfig& new_config, uint32_t level) {
     NODELET_INFO_STREAM("Forced image height is: " << new_config.height);
   }
 
+  NODELET_INFO_STREAM("subscriber_num: " << subscriber_num << " and level: " << level);
   if (subscriber_num > 0 && (level & 0x1))
   {
+    NODELET_DEBUG("New dynamic_reconfigure config received on a parameter with configure level 1, unsubscribing and subscribing");
     unsubscribe();
     subscribe();
   }
