@@ -424,6 +424,9 @@ virtual void onInit() {
       }
       else{
         fs::file_type file_type = fs::status(fs::canonical(fs::path(video_stream_provider))).type();
+        if(fs::path(video_stream_provider) != fs::canonical(fs::path(video_stream_provider)))
+          NODELET_WARN_STREAM("Video stream provider path converted from: '" << fs::path(video_stream_provider) <<
+        "' to its canonical path: '" << fs::canonical(fs::path(video_stream_provider)) << "'" );
         switch (file_type) {
         case fs::file_type::character_file:
         case fs::file_type::block_file:
