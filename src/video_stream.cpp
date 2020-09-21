@@ -179,12 +179,12 @@ int main(int argc, char** argv)
     
     _nh.param("set_camera_fps", set_camera_fps, 30.0);
     ROS_INFO_STREAM("Setting camera FPS to: " << set_camera_fps << ncurses_cr);
-    cap.set(CV_CAP_PROP_FPS, set_camera_fps);
+    cap.set(cv::CAP_PROP_FPS, set_camera_fps);
     
     double reported_camera_fps;
     // OpenCV 2.4 returns -1 (instead of a 0 as the spec says) and prompts an error
     // HIGHGUI ERROR: V4L2: Unable to get property <unknown property string>(5) - Invalid argument
-    reported_camera_fps = cap.get(CV_CAP_PROP_FPS);
+    reported_camera_fps = cap.get(cv::CAP_PROP_FPS);
     if (reported_camera_fps > 0.0)
         ROS_INFO_STREAM("Camera reports FPS: " << reported_camera_fps << ncurses_cr);
     else
@@ -247,8 +247,8 @@ int main(int argc, char** argv)
         return -1;
     }
     if (width_target != 0 && height_target != 0){
-        cap.set(CV_CAP_PROP_FRAME_WIDTH, width_target);
-        cap.set(CV_CAP_PROP_FRAME_HEIGHT, height_target);
+        cap.set(cv::CAP_PROP_FRAME_WIDTH, width_target);
+        cap.set(cv::CAP_PROP_FRAME_HEIGHT, height_target);
     }
 
     cv::Mat frame;
