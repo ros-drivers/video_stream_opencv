@@ -88,16 +88,16 @@ virtual sensor_msgs::CameraInfo get_default_camera_info_from_image(sensor_msgs::
     // Don't let distorsion matrix be empty
     cam_info_msg.D.resize(5, 0.0);
     // Give a reasonable default intrinsic camera matrix
-    cam_info_msg.K = boost::assign::list_of(1.0) (0.0) (img->width/2.0)
-            (0.0) (1.0) (img->height/2.0)
+    cam_info_msg.K = boost::assign::list_of(img->width/2.0) (0.0) (img->width/2.0)
+            (0.0) (img->height/2.0) (img->height/2.0)
             (0.0) (0.0) (1.0);
     // Give a reasonable default rectification matrix
     cam_info_msg.R = boost::assign::list_of (1.0) (0.0) (0.0)
             (0.0) (1.0) (0.0)
             (0.0) (0.0) (1.0);
     // Give a reasonable default projection matrix
-    cam_info_msg.P = boost::assign::list_of (1.0) (0.0) (img->width/2.0) (0.0)
-            (0.0) (1.0) (img->height/2.0) (0.0)
+    cam_info_msg.P = boost::assign::list_of (img->width/2.0) (0.0) (img->width/2.0) (0.0)
+            (0.0) (img->height/2.0) (img->height/2.0) (0.0)
             (0.0) (0.0) (1.0) (0.0);
     return cam_info_msg;
 }
