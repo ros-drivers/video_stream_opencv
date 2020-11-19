@@ -124,6 +124,8 @@ virtual void do_capture() {
         }
         if (!cap->read(frame)) {
           NODELET_ERROR_STREAM("Could not capture frame (frame_counter: " << frame_counter << ")");
+          // Don't message bomb /rosout and ros logs
+          camera_fps_rate.sleep();
           if (latest_config.reopen_on_read_failure) {
             NODELET_WARN("trying to reopen the device");
             unsubscribe();
