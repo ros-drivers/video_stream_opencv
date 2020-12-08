@@ -2,8 +2,8 @@
 Changelog for package video_stream_opencv
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+1.1.6 (2020-12-08)
+------------------
 * #67 Deal better with looping on a video file and the start and stop frame selection
 * #77 Noticed the default camera info was actually wrong, corrected
 * #69 Get canonical file for target device and give a warning if we convert to a canonical path
