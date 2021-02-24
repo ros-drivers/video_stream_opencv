@@ -9,6 +9,7 @@
     <arg name="camera_info_url" value=""/>
     <arg name="flip_horizontal" value="false"/>
     <arg name="flip_vertical" value="false"/>
+    <arg name="clockwise" value="false"/>
     <arg name="visualize" value="false"/>
   </include>
 

@@ -21,6 +21,8 @@
 	  	<arg name="flip_horizontal" value="false" />
 	  	<!-- flip the image vertically -->
 	  	<arg name="flip_vertical" value="false" />
+	   <!-- rotate image clockwise by 90 degrees once -->
+	   <arg name="clockwise" default="false" />
 	  	<!-- visualize on an image_view window the stream generated -->
 	  	<arg name="visualize" value="false" />
    </include>
