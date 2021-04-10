@@ -156,7 +156,7 @@ virtual void do_capture() {
         if(!frame.empty()) {
             std::lock_guard<std::mutex> g(q_mutex);
             // accumulate only until max_queue_size
-            while (framesQueue.size() > latest_config.buffer_queue_size) {
+            while (framesQueue.size() >= latest_config.buffer_queue_size) {
               framesQueue.pop();
             }
             framesQueue.push(frame.clone());
