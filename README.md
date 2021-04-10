@@ -29,6 +29,8 @@ Example usages in launch folder (**only the argument `video_stream_provider` is 
         <arg name="flip_horizontal" value="false" />
         <!-- flip the image vertically -->
         <arg name="flip_vertical" value="false" />
+        <!-- rotate image clockwise by 90 degrees once -->
+        <arg name="clockwise" value="false" />
         <!-- force a width and height, 0 means no forcing -->
         <arg name="width" value="640"/>
         <arg name="height" value="480"/>
@@ -80,6 +82,7 @@ If you want to publish all images (don't drop any and you don't mind some possib
  * `camera_info_url`: camera info loading, take care as it needs the "file:///" at the start , e.g.: `"file:///$(find your_camera_package)/config/your_camera.yaml"`.
  * `flip_horizontal`: flip horizontally the image (mirror it).
  * `flip_vertical`: flip vertically the image (upside down).
+ * `clockwise`: rotate image clockwise by 90 degrees once.
  * `loop_videofile`: if the provider is a video file, enable loop playback.
  * `width` and `height`: force a width and height to the capturing device (if it allows), 0 means no forcing.
  * `start_frame`: if the provider is a video file, set the start frame of video.

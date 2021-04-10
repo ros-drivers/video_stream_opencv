@@ -19,6 +19,8 @@
   	<arg name="flip_horizontal" default="false" />
   	<!-- flip the image vertically -->
   	<arg name="flip_vertical" default="false" />
+  	<!-- rotate image clockwise by 90 degrees once -->
+  	<arg name="clockwise" default="false" />
     <!-- force width and height, 0 means no forcing -->
     <arg name="width" default="0"/>
     <arg name="height" default="0"/>
@@ -44,6 +46,7 @@
 	        <param name="camera_info_url" type="string" value="$(arg camera_info_url)" />
 	        <param name="flip_horizontal" type="bool" value="$(arg flip_horizontal)" />
 	        <param name="flip_vertical" type="bool" value="$(arg flip_vertical)" />
+			<param name="clockwise" type="bool" value="$(arg clockwise)" />
                 <param name="loop_videofile" type="bool" value="$(arg loop_videofile)" />
                 <param name="start_frame" type="int" value="$(arg start_frame)" />
                 <param name="stop_frame" type="int" value="$(arg stop_frame)" />

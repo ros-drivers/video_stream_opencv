@@ -198,6 +198,10 @@ virtual void do_publish(const ros::TimerEvent& event) {
             cv::flip(frame, frame, 1);
           else if (latest_config.flip_vertical)
             cv::flip(frame, frame, 0);
+
+          if (latest_config.clockwise){
+          	cv::rotate(frame, frame, cv::ROTATE_90_CLOCKWISE);
+          }
         }
         cv_bridge::CvImagePtr cv_image =
           boost::make_shared<cv_bridge::CvImage>(header, "bgr8", frame);
@@ -385,6 +389,7 @@ virtual void configCallback(VideoStreamConfig& new_config, uint32_t level) {
   NODELET_INFO_STREAM("Setting buffer size for capturing frames to: " << new_config.buffer_queue_size);
   NODELET_INFO_STREAM("Flip horizontal image is: " << ((new_config.flip_horizontal)?"true":"false"));
   NODELET_INFO_STREAM("Flip vertical image is: " << ((new_config.flip_vertical)?"true":"false"));
+  NODELET_INFO_STREAM("Rotate clockwise image is : " << ((new_config.clockwise)?"true":"false"));
   NODELET_INFO_STREAM("Video start frame is: " << new_config.start_frame);
   NODELET_INFO_STREAM("Video stop frame is: " << new_config.stop_frame);
 

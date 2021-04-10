@@ -22,6 +22,8 @@
         <arg name="flip_horizontal" value="false" />
         <!-- flip the image vertically -->
         <arg name="flip_vertical" value="false" />
+        <!-- rotate image clockwise by 90 degrees once -->
+        <arg name="clockwise" default="false" />
         <!-- enable looping playback -->
         <arg name="loop_videofile" value="true" />
         <!-- start frame of video -->
