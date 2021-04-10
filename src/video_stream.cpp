@@ -187,18 +187,16 @@ virtual void do_publish(const ros::TimerEvent& event) {
     }
 
     // Check if grabbed frame is actually filled with some content
-    if(!frame.empty()) {
+    if(!frame.empty() && is_new_image) {
         // From http://docs.opencv.org/modules/core/doc/operations_on_arrays.html#void flip(InputArray src, OutputArray dst, int flipCode)
         // FLIP_HORIZONTAL == 1, FLIP_VERTICAL == 0 or FLIP_BOTH == -1
         // Flip the image if necessary
-        if (is_new_image){
-          if (latest_config.flip_horizontal && latest_config.flip_vertical)
-            cv::flip(frame, frame, -1);
-          else if (latest_config.flip_horizontal)
-            cv::flip(frame, frame, 1);
-          else if (latest_config.flip_vertical)
-            cv::flip(frame, frame, 0);
-        }
+        if (latest_config.flip_horizontal && latest_config.flip_vertical)
+          cv::flip(frame, frame, -1);
+        else if (latest_config.flip_horizontal)
+          cv::flip(frame, frame, 1);
+        else if (latest_config.flip_vertical)
+          cv::flip(frame, frame, 0);
         cv_bridge::CvImagePtr cv_image =
           boost::make_shared<cv_bridge::CvImage>(header, "bgr8", frame);
         if (latest_config.output_encoding != "bgr8")
