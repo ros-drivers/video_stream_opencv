@@ -123,9 +123,9 @@ virtual void do_capture() {
           continue;
         }
         if (!cap->read(frame)) {
-          NODELET_ERROR_STREAM("Could not capture frame (frame_counter: " << frame_counter << ")");
+          NODELET_ERROR_STREAM_THROTTLE(1.0, "Could not capture frame (frame_counter: " << frame_counter << ")");
           if (latest_config.reopen_on_read_failure) {
-            NODELET_WARN("trying to reopen the device");
+            NODELET_WARN_STREAM_THROTTLE(1.0, "trying to reopen the device");
             unsubscribe();
             subscribe();
           }
