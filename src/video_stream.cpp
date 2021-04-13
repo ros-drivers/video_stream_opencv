@@ -288,11 +288,13 @@ virtual void subscribe() {
     cap->set(cv::CAP_PROP_FRAME_HEIGHT, latest_config.height);
   }
 
-  cap->set(cv::CAP_PROP_BRIGHTNESS, latest_config.brightness);
-  cap->set(cv::CAP_PROP_CONTRAST, latest_config.contrast);
-  cap->set(cv::CAP_PROP_HUE, latest_config.hue);
-  cap->set(cv::CAP_PROP_SATURATION, latest_config.saturation);
-
+  if (latest_config.set_camera_properties) {
+    cap->set(cv::CAP_PROP_BRIGHTNESS, latest_config.brightness);
+    cap->set(cv::CAP_PROP_CONTRAST, latest_config.contrast);
+    cap->set(cv::CAP_PROP_HUE, latest_config.hue);
+    cap->set(cv::CAP_PROP_SATURATION, latest_config.saturation);
+  }
+  
   if (latest_config.auto_exposure) {
     cap->set(cv::CAP_PROP_AUTO_EXPOSURE, 0.75);
     latest_config.exposure = 0.5;
@@ -385,6 +387,12 @@ virtual void configCallback(VideoStreamConfig& new_config, uint32_t level) {
   NODELET_INFO_STREAM("Flip vertical image is: " << ((new_config.flip_vertical)?"true":"false"));
   NODELET_INFO_STREAM("Video start frame is: " << new_config.start_frame);
   NODELET_INFO_STREAM("Video stop frame is: " << new_config.stop_frame);
+  NODELET_INFO_STREAM("set_camera_properties (if False, brightness, contrast, hue and saturation won't be used) is: " << new_config.set_camera_properties);
+  NODELET_INFO_STREAM("Set brightness is: " << new_config.brightness);
+  NODELET_INFO_STREAM("Set contrast is: " << new_config.contrast);
+  NODELET_INFO_STREAM("Set hue is: " << new_config.hue);
+  NODELET_INFO_STREAM("Set saturation is: " << new_config.saturation);
+  
 
   if (new_config.width != 0 && new_config.height != 0)
   {
