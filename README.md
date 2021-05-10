@@ -56,7 +56,7 @@ You can use any input that OpenCV on your system accepts, e.g.:
 
 Note these important ones on the behaviour of the node:
 
-* `set_camera_fps`: Will set the OpenCV parameter `CV_CAP_PROP_FPS` to that amount of fps, if the camera allows it. 
+* `set_camera_fps`: Will set the OpenCV parameter `CV_CAP_PROP_FPS` to that amount of fps, if the camera allows it.
 Does nothing on video streams or video files.
 
 * `buffer_queue_size`: Will set the size of the buffer of images read from the capturing device. We read
@@ -70,9 +70,9 @@ So if you want the very latest image published from a camera, set `buffer_queue_
 
 If you want to publish all images (don't drop any and you don't mind some possible delay from real time), set `buffer_queue_size` big enough for your case (1000?),
  `set_camera_fps` and `fps` to whatever FPS it has.
- 
+
  The rest of the parameters explained, even though they are pretty self explanatory:
- 
+
  * `camera_name`: node name and ros graph name. All topics will hang from this e.g.: /camera_name/<TOPICS>.
  * `video_stream_provider`: A number for the /dev/videoX device, e.g.: 0 for /dev/video0. A string for a path for a video file, e.g.: /home/user/Videos/myvideo.avi
  or a url of a video stream e.g.: rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov and http://10.68.0.6/mjpg/video.mjpg.
@@ -84,6 +84,7 @@ If you want to publish all images (don't drop any and you don't mind some possib
  * `width` and `height`: force a width and height to the capturing device (if it allows), 0 means no forcing.
  * `start_frame`: if the provider is a video file, set the start frame of video.
  * `stop_frame`: if the provider is a video file, set the stop frame of video. `-1` means the end of the video. Also setting `stop_frame = start_frame + 1`  can publish a single frame with a certain rate.
+ * `enable_mjpg`: try to force MJPG capture stream on camera devices
 
 # Extras
 
@@ -100,4 +101,3 @@ And you'll see an output like:
     Correctly opened resource, starting to show feed.
 
 With an OpenCV image show window showing the stream (which should close when pressing ESC, or Control+C the shell).
-
