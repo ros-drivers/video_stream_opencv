@@ -288,6 +288,7 @@ virtual void subscribe() {
     cap->set(cv::CAP_PROP_FRAME_HEIGHT, latest_config.height);
   }
 
+  cap->set(cv::CAP_PROP_MODE, true); // normalize property ranges
   cap->set(cv::CAP_PROP_BRIGHTNESS, latest_config.brightness);
   cap->set(cv::CAP_PROP_CONTRAST, latest_config.contrast);
   cap->set(cv::CAP_PROP_HUE, latest_config.hue);
