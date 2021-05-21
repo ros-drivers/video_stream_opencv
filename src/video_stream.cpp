@@ -127,7 +127,12 @@ virtual void do_capture() {
           if (latest_config.reopen_on_read_failure) {
             NODELET_WARN_STREAM_THROTTLE(1.0, "trying to reopen the device");
             unsubscribe();
-            subscribe();
+            while(!cap || !cap->isOpened())
+            {
+              subscribe(false);
+              if(!cap || !cap->isOpened())
+                boost::this_thread::yield();
+            }
           }
         }
 
@@ -220,7 +225,7 @@ virtual void do_publish(const ros::TimerEvent& event) {
     }
 }
 
-virtual void subscribe() {
+virtual void subscribe(bool launch_thread=true) {
   ROS_DEBUG("Subscribe");
   VideoStreamConfig& latest_config = config;
   // initialize camera info publisher
@@ -301,21 +306,26 @@ virtual void subscribe() {
     cap->set(cv::CAP_PROP_EXPOSURE, latest_config.exposure);
   }
 
-  try {
-    capture_thread = boost::thread(
-      boost::bind(&VideoStreamNodelet::do_capture, this));
-    publish_timer = nh->createTimer(
-      ros::Duration(1.0 / latest_config.fps), &VideoStreamNodelet::do_publish, this);
-  } catch (std::exception& e) {
-    NODELET_ERROR_STREAM("Failed to start capture thread: " << e.what());
+  if(launch_thread) {
+    try {
+      capture_thread = boost::thread(
+        boost::bind(&VideoStreamNodelet::do_capture, this));
+      publish_timer = nh->createTimer(
+        ros::Duration(1.0 / latest_config.fps), &VideoStreamNodelet::do_publish, this);
+    } catch (std::exception& e) {
+      NODELET_ERROR_STREAM("Failed to start capture thread: " << e.what());
+    }
   }
 }
 
 virtual void unsubscribe() {
   ROS_DEBUG("Unsubscribe");
-  publish_timer.stop();
-  capture_thread_running = false;
-  capture_thread.join();
+  if(capture_thread.get_id() != boost::this_thread::get_id())
+  {
+    publish_timer.stop();
+    capture_thread_running = false;
+    capture_thread.join();
+  }
   cap.reset();
 }
 
