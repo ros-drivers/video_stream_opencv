@@ -9,7 +9,10 @@ import os
 import rospy
 import sys
 import time
-from BaseHTTPServer import BaseHTTPRequestHandler
+if sys.version_info[0] < 3:
+    from BaseHTTPServer import BaseHTTPRequestHandler
+else:
+    from http.server import BaseHTTPRequestHandler
 from BaseHTTPServer import HTTPServer
 from SocketServer import ThreadingMixIn
 
