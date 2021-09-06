@@ -417,6 +417,9 @@ virtual void onInit() {
           video_stream_provider.find("https://") != std::string::npos){
         video_stream_provider_type = "http_stream";
       }
+      else if (video_stream_provider.find("udp://") != std::string::npos) {
+        video_stream_provider_type = "udp_stream";
+      }
       else if(video_stream_provider.find("rtsp://") != std::string::npos){
         video_stream_provider_type = "rtsp_stream";
       }
