@@ -70,12 +70,12 @@ So if you want the very latest image published from a camera, set `buffer_queue_
 
 If you want to publish all images (don't drop any and you don't mind some possible delay from real time), set `buffer_queue_size` big enough for your case (1000?),
  `set_camera_fps` and `fps` to whatever FPS it has.
- 
+
  The rest of the parameters explained, even though they are pretty self explanatory:
- 
+
  * `camera_name`: node name and ros graph name. All topics will hang from this e.g.: /camera_name/<TOPICS>.
  * `video_stream_provider`: A number for the /dev/videoX device, e.g.: 0 for /dev/video0. A string for a path for a video file, e.g.: /home/user/Videos/myvideo.avi
- or a url of a video stream e.g.: rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov and http://10.68.0.6/mjpg/video.mjpg.
+ or a url of a video stream e.g.: rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov, udp://localhost:1234 or http://10.68.0.6/mjpg/video.mjpg.
  * `frame_id`: frame_id to be published in the Header of the messages.
  * `camera_info_url`: camera info loading, take care as it needs the "file:///" at the start , e.g.: `"file:///$(find your_camera_package)/config/your_camera.yaml"`.
  * `flip_horizontal`: flip horizontally the image (mirror it).
