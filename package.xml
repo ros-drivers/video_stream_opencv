@@ -36,6 +36,8 @@
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>sensor_msgs</run_depend>
+  <run_depend>image_view</run_depend>
+  <run_depend>roslaunch</run_depend>
 
   <test_depend>rostest</test_depend>
   <test_depend>rostopic</test_depend>
