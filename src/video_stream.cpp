@@ -441,18 +441,18 @@ virtual void onInit() {
 
     // set parameters from dynamic reconfigure server
     dyn_srv = boost::make_shared<dynamic_reconfigure::Server<VideoStreamConfig> >(*pnh);
-    auto f = boost::bind(&VideoStreamNodelet::configCallback, this, _1, _2);
+    auto f = boost::bind(&VideoStreamNodelet::configCallback, this, boost::placeholders::_1, boost::placeholders::_2);
     dyn_srv->setCallback(f);
 
     subscriber_num = 0;
     image_transport::SubscriberStatusCallback connect_cb =
-      boost::bind(&VideoStreamNodelet::connectionCallback, this, _1);
+      boost::bind(&VideoStreamNodelet::connectionCallback, this, boost::placeholders::_1);
     ros::SubscriberStatusCallback info_connect_cb =
-      boost::bind(&VideoStreamNodelet::infoConnectionCallback, this, _1);
+      boost::bind(&VideoStreamNodelet::infoConnectionCallback, this, boost::placeholders::_1);
     image_transport::SubscriberStatusCallback disconnect_cb =
-      boost::bind(&VideoStreamNodelet::disconnectionCallback, this, _1);
+      boost::bind(&VideoStreamNodelet::disconnectionCallback, this, boost::placeholders::_1);
     ros::SubscriberStatusCallback info_disconnect_cb =
-      boost::bind(&VideoStreamNodelet::infoDisconnectionCallback, this, _1);
+      boost::bind(&VideoStreamNodelet::infoDisconnectionCallback, this, boost::placeholders::_1);
     pub = image_transport::ImageTransport(*nh).advertiseCamera(
       "image_raw", 1,
       connect_cb, disconnect_cb,
