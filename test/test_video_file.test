@@ -1,0 +1,25 @@
+<launch>
+  <include file="$(find video_stream_opencv)/launch/camera.launch">
+    <arg name="camera_name" value="videofile"/>
+    <arg name="video_stream_provider" value="$(find video_stream_opencv)/test/small.mp4"/>
+    <arg name="buffer_queue_size" value="1000"/>
+    <arg name="fps" value="30"/>
+    <arg name="frame_id" value="videofile_frame"/>
+    <arg name="camera_info_url" value=""/>
+    <arg name="flip_horizontal" value="false"/>
+    <arg name="flip_vertical" value="false"/>
+    <arg name="loop_videofile" value="true"/>
+    <arg name="start_frame" value="30"/>
+    <arg name="stop_frame" value="150"/>
+    <arg name="visualize" value="false"/>
+  </include>
+
+  <test test-name="pubtest" pkg="rostest" type="publishtest">
+    <rosparam>
+      topics:
+      - name: /videofile/image_raw
+      - name: /videofile/camera_info
+      timeout: 10
+    </rosparam>
+  </test>
+</launch>

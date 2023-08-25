@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <package>
   <name>video_stream_opencv</name>
-  <version>1.0.2</version>
+  <version>1.1.6</version>
 
   <description>
     The video_stream_opencv package contains a node to publish a video stream (the protocols that
-    opencv supports are supported, including rtsp, webcams on /dev/video and video files) in ROS image topics, it supports camera info and basic image flipping (horizontal, vertical or both) capabilities.
+    opencv supports are supported, including rtsp, webcams on /dev/video and video files) in ROS image topics, it supports camera info and basic image flipping (horizontal, vertical or both) capabilities, also adjusting publishing rate.
   </description>
 
   <maintainer email="Sammy.Pfeiffer@student.uts.edu.au">Sammy Pfeiffer</maintainer>
@@ -22,6 +22,8 @@
   <build_depend>cv_bridge</build_depend>
   <build_depend>image_transport</build_depend>
   <build_depend>camera_info_manager</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>nodelet</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>sensor_msgs</build_depend>
@@ -29,8 +31,16 @@
   <run_depend>cv_bridge</run_depend>
   <run_depend>image_transport</run_depend>
   <run_depend>camera_info_manager</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>nodelet</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>sensor_msgs</run_depend>
 
+  <test_depend>rostest</test_depend>
+  <test_depend>rostopic</test_depend>
+
+  <export>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml"/>
+  </export>
 </package>

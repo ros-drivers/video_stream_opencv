@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find video_stream_opencv)/launch/camera.launch" >
+    <arg name="camera_name" value="rtsp2"/>
+    <arg name="video_stream_provider" value="rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov"/>
+    <arg name="buffer_queue_size" value="1000"/>
+    <arg name="fps" value="30"/>
+    <arg name="frame_id" value="rtsp_frame"/>
+    <arg name="camera_info_url" value=""/>
+    <arg name="flip_horizontal" value="false"/>
+    <arg name="flip_vertical" value="false"/>
+    <arg name="visualize" value="false"/>
+  </include>
+
+  <test test-name="pubtest" pkg="rostest" type="publishtest">
+    <rosparam>
+      topics:
+      - name: /rtsp2/image_raw
+      - name: /rtsp2/camera_info
+      timeout: 10
+    </rosparam>
+  </test>
+</launch>
