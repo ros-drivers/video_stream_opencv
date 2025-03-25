@@ -50,6 +50,7 @@
 #include <queue>
 #include <mutex>
 #include <video_stream_opencv/VideoStreamConfig.h>
+#include <std_msgs/String.h>
 
 namespace fs = boost::filesystem;
 
@@ -72,6 +73,17 @@ bool capture_thread_running;
 boost::thread capture_thread;
 ros::Timer publish_timer;
 sensor_msgs::CameraInfo cam_info_msg;
+std::string message;
+std::string text_position;
+double text_scale = 1.0;
+ros::Subscriber sub;
+
+// Callback to get the string message
+void stringCallback(const std_msgs::String::ConstPtr& msg) {
+  std::lock_guard<std::mutex> lock(s_mutex);
+  message = msg->data;
+}
+
 
 // Based on the ros tutorial on transforming opencv images to Image messages
 
@@ -197,6 +209,52 @@ virtual void do_publish(const ros::TimerEvent& event) {
           cv::flip(frame, frame, 1);
         else if (latest_config.flip_vertical)
           cv::flip(frame, frame, 0);
+        if (!message.empty()) {
+            int font_face = cv::FONT_HERSHEY_SIMPLEX;
+            double font_scale = text_scale;
+            int thickness = 2;
+            int line_spacing = 10; // Space between lines in pixels
+            int baseline = 0;
+        
+            // Split message into individual lines
+            std::istringstream stream(message);
+            std::string line;
+            std::vector<std::string> lines;
+            std::vector<cv::Size> sizes;
+            int total_height = 0;
+            int max_width = 0;
+        
+            // Calculate text size for each line and determine max width
+            while (std::getline(stream, line)) {
+                lines.push_back(line);
+                cv::Size size = cv::getTextSize(line, font_face, font_scale, thickness, &baseline);
+                sizes.push_back(size);
+                total_height += size.height + line_spacing;
+                if (size.width > max_width)
+                    max_width = size.width;
+            }
+        
+            // Determine starting point for the first line based on text_position
+            cv::Point base_point;
+            if (text_position == "TOP_LEFT") {
+                base_point = cv::Point(10, 10 + sizes[0].height);
+            } else if (text_position == "TOP_RIGHT") {
+                base_point = cv::Point(frame.cols - max_width - 10, 10 + sizes[0].height);
+            } else if (text_position == "BOTTOM_LEFT") {
+                base_point = cv::Point(10, frame.rows - total_height + sizes[0].height);
+            } else { // default or BOTTOM_RIGHT
+                base_point = cv::Point(frame.cols - max_width - 10, frame.rows - total_height + sizes[0].height);
+            }
+        
+            // Draw each line of text, with shadow for contrast
+            for (size_t i = 0; i < lines.size(); ++i) {
+                cv::Point pos = base_point + cv::Point(0, i * (sizes[i].height + line_spacing));
+                // Draw shadow
+                cv::putText(frame, lines[i], pos + cv::Point(2, 2), font_face, font_scale, CV_RGB(0, 0, 0), thickness + 1);
+                // Draw actual text
+                cv::putText(frame, lines[i], pos, font_face, font_scale, CV_RGB(255, 255, 255), thickness);
+            }
+        }
         cv_bridge::CvImagePtr cv_image =
           boost::make_shared<cv_bridge::CvImage>(header, "bgr8", frame);
         if (latest_config.output_encoding != "bgr8")
@@ -407,9 +465,12 @@ virtual void onInit() {
     nh.reset(new ros::NodeHandle(getNodeHandle()));
     pnh.reset(new ros::NodeHandle(getPrivateNodeHandle()));
     subscriber_num = 0;
+    sub = nh->subscribe("aditional_information", 1, &VideoStreamNodelet::stringCallback, this);
 
     // provider can be an url (e.g.: rtsp://10.0.0.1:554) or a number of device, (e.g.: 0 would be /dev/video0)
     pnh->param<std::string>("video_stream_provider", video_stream_provider, "0");
+    pnh->param<std::string>("text_position", text_position, "BOTTOM_RIGHT");
+    pnh->param<double>("text_scale", text_scale, 1.0);
     // check file type
     try {
       int device_num = std::stoi(video_stream_provider);
