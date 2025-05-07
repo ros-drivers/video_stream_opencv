@@ -16,13 +16,13 @@ Gst.init(None)
 
 class RTSPMediaFactory(GstRtspServer.RTSPMediaFactory):
     def __init__(self, video_file, **properties):
-        super().__init__(**properties)
+        super(RTSPMediaFactory, self).__init__(**properties)
         self.video_file = video_file
 
     def do_create_element(self, url):
         # Build the pipeline: read from file, decode, convert video, encode to H264, and pack in RTP H264 payload
         return Gst.parse_launch(' ! '.join([
-            f'filesrc location={self.video_file}',
+            'filesrc location={}'.format(self.video_file),
             'decodebin',
             'videoconvert',
             'x264enc speed-preset=ultrafast tune=zerolatency',
@@ -38,7 +38,7 @@ def main():
     args, _ = p.parse_known_args()
 
     if not os.path.exists(args.video):
-        p.error(f'Video {args.video} does not exist')
+        p.error('Video {} does not exist'.format(args.video))
 
     server = GstRtspServer.RTSPServer()
     server.props.service = str(args.port)
@@ -47,10 +47,10 @@ def main():
     factory.set_shared(True)
 
     mount_points = server.get_mount_points()
-    mount_points.add_factory('/', factory)
+    mount_points.add_factory('/video', factory)
 
     server.attach(None)
-    print(f'RTSP server is running at rtsp://localhost:{args.port}/')
+    print('RTSP server is running at rtsp://localhost:{}/video'.format(args.port))
 
     loop = GLib.MainLoop()
     try:

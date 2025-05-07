@@ -7,7 +7,7 @@
       <remap from="camera" to="image_raw"/>
       <rosparam>
         camera_name: rtsp2
-        video_stream_provider: rtsp://localhost:8854/
+        video_stream_provider: rtsp://localhost:8854/video
         buffer_queue_size: 1000
         fps: 30
         frame_id: rtsp_frame
