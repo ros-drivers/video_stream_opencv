@@ -12,12 +12,12 @@ import time
 try:
     from http.server import BaseHTTPRequestHandler
     from http.server import HTTPServer
-except ModuleNotFoundError:
+except ImportError:
     from BaseHTTPServer import BaseHTTPRequestHandler
     from BaseHTTPServer import HTTPServer
 try:
     from socketserver import ThreadingMixIn
-except ModuleNotFoundError:
+except ImportError:
     from SocketServer import ThreadingMixIn
 
 
