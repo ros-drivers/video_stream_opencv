@@ -15,6 +15,7 @@
 
   <group ns="$(arg camera_name)">
     <node pkg="video_stream_opencv" type="video_stream" name="$(arg camera_name)_stream"
+          launch-prefix="$(find video_stream_opencv)/test/delayed_launch.sh"
           output="screen" respawn="true">
       <remap from="camera" to="image_raw" />
       <param name="camera_name" type="string" value="$(arg camera_name)" />
