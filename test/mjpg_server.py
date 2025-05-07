@@ -9,9 +9,16 @@ import os
 import rospy
 import sys
 import time
-from BaseHTTPServer import BaseHTTPRequestHandler
-from BaseHTTPServer import HTTPServer
-from SocketServer import ThreadingMixIn
+try:
+    from http.server import BaseHTTPRequestHandler
+    from http.server import HTTPServer
+except ImportError:
+    from BaseHTTPServer import BaseHTTPRequestHandler
+    from BaseHTTPServer import HTTPServer
+try:
+    from socketserver import ThreadingMixIn
+except ImportError:
+    from SocketServer import ThreadingMixIn
 
 
 VIDEO_PATH = None
@@ -70,14 +77,14 @@ class MJPGStreamHandler(BaseHTTPRequestHandler):
                 ok, img = cv2.imencode('.jpg', img, [cv2.IMWRITE_JPEG_QUALITY, self.jpeg_quality])
                 if not ok:
                     continue
-                jpg = img.tostring()
-                self.wfile.write('--jpgboundary')
-                self.wfile.write(os.linesep)
+                jpg = img.tobytes()
+                self.wfile.write(b'--jpgboundary')
+                self.wfile.write(os.linesep.encode('utf-8'))
                 self.send_header('Content-type', 'image/jpeg')
                 self.send_header('Content-length', str(len(jpg)))
                 self.end_headers()
                 self.wfile.write(jpg)
-                self.wfile.write(os.linesep)
+                self.wfile.write(os.linesep.encode('utf-8'))
                 time.sleep(1.0 / self.loop_rate)
             except KeyboardInterrupt:
                 break

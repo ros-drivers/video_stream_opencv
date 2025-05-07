@@ -15,6 +15,7 @@
 
   <group ns="$(arg camera_name)">
     <node pkg="video_stream_opencv" type="video_stream" name="$(arg camera_name)_stream"
+          launch-prefix="$(find video_stream_opencv)/test/delayed_launch.sh"
           output="screen" respawn="true">
       <remap from="camera" to="image_raw" />
       <param name="camera_name" type="string" value="$(arg camera_name)" />
@@ -36,7 +37,7 @@
         args="--port 8080 $(find video_stream_opencv)/test/small.mp4"
         output="screen"/>
 
-  <test test-name="pubtest" pkg="rostest" type="publishtest">
+  <test test-name="test_mjpg_stream" pkg="rostest" type="publishtest" retry="2">
     <rosparam>
       topics:
       - name: /mjpg/image_raw

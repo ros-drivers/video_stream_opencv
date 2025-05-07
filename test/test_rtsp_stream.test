@@ -1,18 +1,28 @@
 <?xml version="1.0"?>
 <launch>
-  <include file="$(find video_stream_opencv)/launch/camera.launch" >
-    <arg name="camera_name" value="rtsp2"/>
-    <arg name="video_stream_provider" value="rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov"/>
-    <arg name="buffer_queue_size" value="1000"/>
-    <arg name="fps" value="30"/>
-    <arg name="frame_id" value="rtsp_frame"/>
-    <arg name="camera_info_url" value=""/>
-    <arg name="flip_horizontal" value="false"/>
-    <arg name="flip_vertical" value="false"/>
-    <arg name="visualize" value="false"/>
-  </include>
+  <group ns="rtsp2">
+    <node pkg="video_stream_opencv" type="video_stream" name="rtsp2_stream"
+          launch-prefix="$(find video_stream_opencv)/test/delayed_launch.sh"
+          output="screen" respawn="true">
+      <remap from="camera" to="image_raw"/>
+      <rosparam>
+        camera_name: rtsp2
+        video_stream_provider: rtsp://localhost:8854/video
+        buffer_queue_size: 1000
+        fps: 30
+        frame_id: rtsp_frame
+        camera_info_url: ''
+        flip_horizontal: false
+        flip_vertical: false
+      </rosparam>
+    </node>
+  </group>
 
-  <test test-name="pubtest" pkg="rostest" type="publishtest">
+  <node name="rtsp_server" pkg="video_stream_opencv" type="rtsp_server.py"
+        args="--port 8854 $(find video_stream_opencv)/test/small.mp4"
+        output="screen"/>
+
+  <test test-name="test_rtsp_stream" pkg="rostest" type="publishtest">
     <rosparam>
       topics:
       - name: /rtsp2/image_raw
