@@ -36,7 +36,7 @@
         args="--port 8080 $(find video_stream_opencv)/test/small.mp4"
         output="screen"/>
 
-  <test test-name="pubtest" pkg="rostest" type="publishtest">
+  <test test-name="test_mjpg_stream" pkg="rostest" type="publishtest" retry="2">
     <rosparam>
       topics:
       - name: /mjpg/image_raw

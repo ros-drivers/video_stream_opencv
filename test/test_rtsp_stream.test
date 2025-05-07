@@ -12,7 +12,7 @@
     <arg name="visualize" value="false"/>
   </include>
 
-  <test test-name="pubtest" pkg="rostest" type="publishtest">
+  <test test-name="test_rtsp_stream" pkg="rostest" type="publishtest">
     <rosparam>
       topics:
       - name: /rtsp2/image_raw

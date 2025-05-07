@@ -14,7 +14,7 @@
     <arg name="visualize" value="false"/>
   </include>
 
-  <test test-name="pubtest" pkg="rostest" type="publishtest">
+  <test test-name="test_video_file" pkg="rostest" type="publishtest">
     <rosparam>
       topics:
       - name: /videofile/image_raw
